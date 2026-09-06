@@ -1,0 +1,80 @@
+study:
+  id: DEMO-STUDY
+  source: cdisc-pilot-replication inspired mock metadata
+
+datasets:
+  - id: ADSL
+    label: Subject-Level Analysis Dataset
+    status_summary:
+      green: 4
+      yellow: 2
+      red: 0
+    variables:
+      - name: USUBJID
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Unique subject identifier.
+      - name: TRT01P
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Planned treatment for period 01.
+      - name: SAFFL
+        status: yellow
+        status_label: Partial reference match
+        spec_similarity: 82
+        definition: Safety population flag.
+      - name: AGE
+        status: green
+        status_label: Reviewed
+        spec_similarity: 91
+        definition: Age at informed consent.
+      - name: SEX
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Sex.
+      - name: RACE
+        status: yellow
+        status_label: Partial reference match
+        spec_similarity: 76
+        definition: Race.
+
+  - id: ADAE
+    label: Adverse Event Analysis Dataset
+    status_summary:
+      green: 4
+      yellow: 1
+      red: 1
+    variables:
+      - name: USUBJID
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Unique subject identifier.
+      - name: TRT01P
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Planned treatment for period 01.
+      - name: SAFFL
+        status: yellow
+        status_label: Partial reference match
+        spec_similarity: 82
+        definition: Safety population flag.
+      - name: TRTEMFL
+        status: red
+        status_label: AI generated, needs R review
+        spec_similarity: 0
+        definition: Treatment-emergent adverse event flag.
+      - name: AEBODSYS
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Body system or organ class.
+      - name: AEDECOD
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        definition: Dictionary-derived preferred term.

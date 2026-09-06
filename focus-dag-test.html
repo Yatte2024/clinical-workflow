@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Focus DAG Test</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f6f7f9, #101215);
+      --surface: light-dark(#ffffff, #171a20);
+      --surface-2: light-dark(#f0f3f7, #20242c);
+      --text: light-dark(#1f2633, #eef2f7);
+      --muted: light-dark(#667085, #a6afbd);
+      --line: light-dark(#d9e0ea, #343b46);
+      --green: #1f9d55;
+      --yellow: #d89614;
+      --red: #d64545;
+      --blue: #2d6cdf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 15px; }
+    h3 { font-size: 13px; color: var(--muted); }
+    .content {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .panel-head {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .panel-body { padding: 14px; }
+    .muted { color: var(--muted); }
+    .small { color: var(--muted); font-size: 12px; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+    .query {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 10px;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+    }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 9px 11px;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    button[aria-pressed="true"] {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: light-dark(#edf4ff, #172033);
+    }
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .metric b {
+      display: block;
+      font-size: 22px;
+    }
+    .focus-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+    }
+    .graph {
+      overflow: auto;
+      background: light-dark(#fbfcfe, #111419);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    svg {
+      min-width: 980px;
+      width: 100%;
+      height: 430px;
+      display: block;
+    }
+    .edge {
+      fill: none;
+      stroke: var(--line);
+      stroke-width: 2;
+      stroke-linecap: square;
+    }
+    .edge.active { stroke: var(--blue); stroke-width: 2.5; }
+    .node rect {
+      fill: var(--surface);
+      stroke: var(--line);
+      stroke-width: 1;
+      rx: 6;
+    }
+    .node text { fill: var(--text); font-size: 12px; pointer-events: none; }
+    .node .label { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .node .meta { fill: var(--muted); font-size: 11px; }
+    .rail { stroke-width: 4; stroke-linecap: round; }
+    .node.green .rail { stroke: var(--green); }
+    .node.yellow .rail { stroke: var(--yellow); }
+    .node.red .rail { stroke: var(--red); }
+    .node.neutral .rail { stroke: var(--blue); }
+    .node.selected rect {
+      stroke: var(--blue);
+      stroke-width: 2;
+    }
+    .detail-list {
+      display: grid;
+      gap: 8px;
+    }
+    .item {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      padding: 9px 10px;
+    }
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 880px) {
+      .query, .grid-3, .focus-layout, .overview { grid-template-columns: 1fr; }
+      svg { min-width: 760px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>Focus DAG Test</h1>
+        <div class="small">Search-first impact tracing for large studies</div>
+      </div>
+      <div class="small">query-first DAG</div>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+
+  <script>
+    const SAMPLE_STATE = {
+      adam: {
+        study: { id: "DEMO-STUDY" },
+        datasets: [
+          {
+            id: "ADSL",
+            label: "Subject-Level Analysis Dataset",
+            variables: [
+              { name: "USUBJID", status: "green", status_label: "Reference spec match", sources: ["DM.USUBJID"] },
+              { name: "TRT01P", status: "green", status_label: "Reference spec match", sources: ["DM.ARM"] },
+              { name: "SAFFL", status: "yellow", status_label: "Partial reference match", sources: ["EX.EXSTDTC"] },
+              { name: "AGE", status: "green", status_label: "Reviewed", sources: ["DM.AGE"] },
+              { name: "SEX", status: "green", status_label: "Reference spec match", sources: ["DM.SEX"] },
+              { name: "RACE", status: "yellow", status_label: "Partial reference match", sources: ["DM.RACE"] },
+              { name: "TRTSDT", status: "green", status_label: "Reference spec match", sources: ["EX.EXSTDTC"] },
+              { name: "TRTEDT", status: "green", status_label: "Reference spec match", sources: ["EX.EXENDTC"] }
+            ]
+          },
+          {
+            id: "ADAE",
+            label: "Adverse Event Analysis Dataset",
+            variables: [
+              { name: "USUBJID", status: "green", status_label: "Reference spec match", sources: ["ADSL.USUBJID"] },
+              { name: "TRT01P", status: "green", status_label: "Reference spec match", sources: ["ADSL.TRT01P"] },
+              { name: "SAFFL", status: "yellow", status_label: "Partial reference match", sources: ["ADSL.SAFFL"] },
+              { name: "TRTEMFL", status: "red", status_label: "AI generated, needs R review", sources: ["AE.AESTDTC", "ADSL.TRTSDT", "ADSL.TRTEDT"] },
+              { name: "AEBODSYS", status: "green", status_label: "Reference spec match", sources: ["AE.AEBODSYS"] },
+              { name: "AEDECOD", status: "green", status_label: "Reference spec match", sources: ["AE.AEDECOD"] }
+            ]
+          },
+          {
+            id: "ADLB",
+            label: "Laboratory Analysis Dataset",
+            variables: [
+              { name: "USUBJID", status: "green", status_label: "Reference spec match", sources: ["ADSL.USUBJID"] },
+              { name: "TRT01P", status: "green", status_label: "Reference spec match", sources: ["ADSL.TRT01P"] },
+              { name: "SAFFL", status: "yellow", status_label: "Partial reference match", sources: ["ADSL.SAFFL"] },
+              { name: "PARAMCD", status: "green", status_label: "Reference spec match", sources: ["LB.LBTESTCD"] },
+              { name: "AVAL", status: "yellow", status_label: "Partial reference match", sources: ["LB.LBSTRESN"] },
+              { name: "CHG", status: "red", status_label: "AI generated, needs R review", sources: ["ADLB.AVAL", "ADLB.BASE"] },
+              { name: "BASE", status: "yellow", status_label: "Partial reference match", sources: ["LB.LBSTRESN", "ADSL.TRTSDT"] }
+            ]
+          }
+        ]
+      },
+      dpp: {
+        outputs: [
+          { id: "T14.1.1", title: "Demographic and Baseline Characteristics", dataset: "ADSL", required_variables: ["ADSL.USUBJID", "ADSL.TRT01P", "ADSL.SAFFL", "ADSL.AGE", "ADSL.SEX", "ADSL.RACE"] },
+          { id: "T14.3.1", title: "Treatment-Emergent Adverse Events by SOC and PT", dataset: "ADAE", required_variables: ["ADAE.USUBJID", "ADAE.TRT01P", "ADAE.SAFFL", "ADAE.TRTEMFL", "ADAE.AEBODSYS", "ADAE.AEDECOD"] },
+          { id: "T14.2.3", title: "Laboratory Shift From Baseline", dataset: "ADLB", required_variables: ["ADLB.USUBJID", "ADLB.TRT01P", "ADLB.SAFFL", "ADLB.PARAMCD", "ADLB.BASE", "ADLB.AVAL", "ADLB.CHG"] },
+          { id: "F14.2.1", title: "Mean Change in Laboratory Value Over Time", dataset: "ADLB", required_variables: ["ADLB.USUBJID", "ADLB.TRT01P", "ADLB.PARAMCD", "ADLB.AVAL", "ADLB.CHG"] }
+        ]
+      }
+    };
+    window.__FOCUS_DAG_STATE__ = "__FOCUS_DAG_STATE_JSON__";
+    let state;
+    let selected = "ADSL.SAFFL";
+    let query = "";
+
+    function esc(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function datasets() { return state?.adam?.datasets || []; }
+    function outputs() { return state?.dpp?.outputs || []; }
+    function allVariables() {
+      return datasets().flatMap(ds => (ds.variables || []).map(v => ({ ...v, id: `${ds.id}.${v.name}`, dataset: ds.id })));
+    }
+    function findVariable(id) {
+      return allVariables().find(v => v.id === id);
+    }
+    function variableStatus(id) {
+      return findVariable(id)?.status || "neutral";
+    }
+    function outputStatus(output) {
+      const statuses = (output.required_variables || []).map(variableStatus);
+      if (statuses.includes("red")) return "red";
+      if (statuses.includes("yellow")) return "yellow";
+      return "green";
+    }
+    function buildEdges() {
+      const edges = [];
+      for (const ds of datasets()) {
+        for (const variable of ds.variables || []) {
+          const variableId = `${ds.id}.${variable.name}`;
+          for (const source of variable.sources || []) edges.push([source, variableId]);
+          edges.push([variableId, ds.id]);
+        }
+      }
+      for (const output of outputs()) edges.push([output.dataset, output.id]);
+      return edges;
+    }
+    function nodeMeta(id) {
+      const v = findVariable(id);
+      if (v) return { type: "ADaM variable", status: v.status, label: v.status_label };
+      const ds = datasets().find(item => item.id === id);
+      if (ds) {
+        const statuses = (ds.variables || []).map(v => v.status);
+        const status = statuses.includes("red") ? "red" : statuses.includes("yellow") ? "yellow" : "green";
+        return { type: "ADaM dataset", status, label: ds.label };
+      }
+      const output = outputs().find(item => item.id === id);
+      if (output) return { type: "Output", status: outputStatus(output), label: output.title };
+      return { type: "Source variable", status: "neutral", label: "source" };
+    }
+    function downstream(start) {
+      const edges = buildEdges();
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length) {
+        const current = queue.shift();
+        for (const [from, to] of edges) {
+          if (from === current && !seen.has(to)) {
+            seen.add(to);
+            queue.push(to);
+          }
+        }
+      }
+      return seen;
+    }
+    function upstream(start) {
+      const edges = buildEdges();
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length) {
+        const current = queue.shift();
+        for (const [from, to] of edges) {
+          if (to === current && !seen.has(from)) {
+            seen.add(from);
+            queue.push(from);
+          }
+        }
+      }
+      return seen;
+    }
+    function focusSubgraph() {
+      const up = upstream(selected);
+      const down = downstream(selected);
+      const nodes = new Set([...up, ...down]);
+      const edges = buildEdges().filter(([from, to]) => nodes.has(from) && nodes.has(to));
+      return { nodes: [...nodes], edges };
+    }
+    function searchResults() {
+      const nodes = [
+        ...new Set([
+          ...allVariables().map(v => v.id),
+          ...datasets().map(ds => ds.id),
+          ...outputs().map(output => output.id),
+          ...buildEdges().flat()
+        ])
+      ];
+      const q = query.trim().toLowerCase();
+      return nodes.filter(id => !q || id.toLowerCase().includes(q)).slice(0, 18);
+    }
+    function layout(nodes, edges) {
+      const nodeSet = new Set(nodes);
+      const incoming = new Map(nodes.map(id => [id, []]));
+      for (const [from, to] of edges) {
+        if (nodeSet.has(from) && nodeSet.has(to)) incoming.get(to).push(from);
+      }
+      const memo = new Map();
+      function rank(id, visiting = new Set()) {
+        if (memo.has(id)) return memo.get(id);
+        if (visiting.has(id)) return 0;
+        visiting.add(id);
+        const parents = incoming.get(id) || [];
+        const value = parents.length ? Math.max(...parents.map(parent => rank(parent, visiting) + 1)) : 0;
+        visiting.delete(id);
+        memo.set(id, value);
+        return value;
+      }
+      const groupsByRank = new Map();
+      for (const id of nodes) {
+        const key = rank(id);
+        if (!groupsByRank.has(key)) groupsByRank.set(key, []);
+        groupsByRank.get(key).push(id);
+      }
+      const typeOrder = { "Source variable": 0, "ADaM variable": 1, "ADaM dataset": 2, "Output": 3 };
+      const groups = [...groupsByRank.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([, group]) => group.sort((a, b) => {
+          const byType = typeOrder[nodeMeta(a).type] - typeOrder[nodeMeta(b).type];
+          return byType || a.localeCompare(b);
+        }));
+      const positions = {};
+      const nodeW = 190;
+      const nodeH = 44;
+      const columnGap = 130;
+      const rowGap = 18;
+      const marginX = 28;
+      const marginY = 26;
+      const width = Math.max(980, marginX * 2 + groups.length * nodeW + Math.max(groups.length - 1, 0) * columnGap);
+      const maxRows = Math.max(...groups.map(group => group.length), 1);
+      const height = Math.max(430, marginY * 2 + maxRows * nodeH + (maxRows - 1) * rowGap);
+      groups.forEach((group, col) => {
+        const total = group.length * nodeH + (group.length - 1) * rowGap;
+        const startY = Math.max(marginY, (height - total) / 2);
+        group.forEach((id, row) => {
+          positions[id] = { x: marginX + col * (nodeW + columnGap), y: startY + row * (nodeH + rowGap) };
+        });
+      });
+      return { positions, width, height, nodeW, nodeH };
+    }
+    function renderGraph() {
+      const graph = focusSubgraph();
+      const { positions, width, height, nodeW, nodeH } = layout(graph.nodes, graph.edges);
+      const path = ([from, to]) => {
+        const a = positions[from];
+        const b = positions[to];
+        if (!a || !b) return "";
+        const x1 = a.x + nodeW;
+        const y1 = a.y + nodeH / 2;
+        const x2 = b.x;
+        const y2 = b.y + nodeH / 2;
+        const mid = x1 + Math.max(42, (x2 - x1) / 2);
+        return `M ${x1 + 8} ${y1} H ${mid} V ${y2} H ${x2 - 8}`;
+      };
+      const edges = graph.edges.map(edge => `<path class="edge active" d="${path(edge)}"></path>`).join("");
+      const nodes = graph.nodes.map(id => {
+        const meta = nodeMeta(id);
+        const pos = positions[id];
+        return `<g class="node ${esc(meta.status)} ${id === selected ? "selected" : ""}" transform="translate(${pos.x},${pos.y})" data-node="${esc(id)}">
+          <rect width="${nodeW}" height="${nodeH}"></rect>
+          <line class="rail" x1="8" y1="8" x2="8" y2="${nodeH - 8}"></line>
+          <text class="label" x="18" y="18">${esc(id)}</text>
+          <text class="meta" x="18" y="34">${esc(String(meta.label || meta.type).slice(0, 24))}</text>
+        </g>`;
+      }).join("");
+      return `<div class="graph"><svg viewBox="0 0 ${width} ${height}" style="min-width:${width}px;height:${height}px;" role="img" aria-label="Focused downstream impact graph">${edges}${nodes}</svg></div>`;
+    }
+    function renderDetails() {
+      const graph = focusSubgraph();
+      const affectedVariables = graph.nodes.filter(id => nodeMeta(id).type === "ADaM variable" && id !== selected);
+      const affectedDatasets = graph.nodes.filter(id => nodeMeta(id).type === "ADaM dataset");
+      const affectedOutputs = graph.nodes.filter(id => nodeMeta(id).type === "Output");
+      return `
+        <div class="grid-3">
+          <div class="metric"><b>${affectedVariables.length}</b><span class="small">affected ADaM variables</span></div>
+          <div class="metric"><b>${affectedDatasets.length}</b><span class="small">affected ADaM datasets</span></div>
+          <div class="metric"><b>${affectedOutputs.length}</b><span class="small">affected outputs</span></div>
+        </div>
+        <div class="detail-list" style="margin-top:12px;">
+          <div class="item"><b class="mono">${esc(selected)}</b><div class="small">${esc(nodeMeta(selected).type)} · ${esc(nodeMeta(selected).label)}</div></div>
+          <div class="item"><b>Downstream outputs</b><div class="small">${affectedOutputs.map(id => `<span class="mono">${esc(id)}</span>`).join(", ") || "None"}</div></div>
+        </div>`;
+    }
+    function renderOverview() {
+      return `<div class="overview">
+        <div class="metric"><b>${new Set(buildEdges().flat().filter(id => nodeMeta(id).type === "Source variable")).size}</b><span class="small">source variables</span></div>
+        <div class="metric"><b>${allVariables().length}</b><span class="small">ADaM variables</span></div>
+        <div class="metric"><b>${datasets().length}</b><span class="small">ADaM datasets</span></div>
+        <div class="metric"><b>${outputs().length}</b><span class="small">outputs</span></div>
+      </div>`;
+    }
+    function render() {
+      document.getElementById("app").innerHTML = `
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Search Impact</h2>
+              <div class="small">Pick any source variable, ADaM variable, dataset, or output. The graph shows only its relevant neighborhood.</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="query">
+              <input id="search" value="${esc(query)}" placeholder="Search AE.AESTDTC, ADSL.SAFFL, ADAE.TRTEMFL, T14.3.1">
+              <button id="clear">Clear</button>
+            </div>
+            <div class="suggestions">${searchResults().map(id => `<button data-select="${esc(id)}" aria-pressed="${id === selected}"><span class="mono">${esc(id)}</span><div class="small">${esc(nodeMeta(id).type)}</div></button>`).join("")}</div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Focused Impact Graph</h2><div class="small">Upstream context plus downstream affected datasets and outputs.</div></div>
+          </div>
+          <div class="panel-body focus-layout">
+            ${renderGraph()}
+            <div>${renderDetails()}</div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><h2>Collapsed Study Overview</h2><div class="small">Full graph stays in storage; overview remains aggregated.</div></div></div>
+          <div class="panel-body">${renderOverview()}</div>
+        </section>
+      `;
+      document.getElementById("search").addEventListener("input", event => {
+        query = event.target.value;
+        render();
+        document.getElementById("search").focus();
+      });
+      document.getElementById("clear").addEventListener("click", () => {
+        query = "";
+        render();
+      });
+      document.querySelectorAll("[data-select], [data-node]").forEach(button => {
+        button.addEventListener("click", () => {
+          selected = button.dataset.select || button.dataset.node;
+          query = selected;
+          render();
+        });
+      });
+    }
+    async function init() {
+      if (window.__FOCUS_DAG_STATE__ && window.__FOCUS_DAG_STATE__ !== "__FOCUS_DAG_STATE_JSON__") {
+        state = JSON.parse(window.__FOCUS_DAG_STATE__);
+      } else {
+        state = SAMPLE_STATE;
+      }
+      render();
+    }
+    init().catch(error => {
+      document.getElementById("app").innerHTML = `<section class="panel"><div class="panel-body">${esc(error.message)}</div></section>`;
+    });
+  </script>
+</body>
+</html>

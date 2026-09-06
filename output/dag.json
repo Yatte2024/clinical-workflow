@@ -1,0 +1,303 @@
+{
+  "generated_at": "2026-09-06T19:33:46.704Z",
+  "nodes": [
+    {
+      "id": "ADSL",
+      "type": "adam_dataset",
+      "status": "yellow",
+      "label": "Subject-Level Analysis Dataset"
+    },
+    {
+      "id": "ADSL.USUBJID",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "DM.USUBJID",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "DM.USUBJID"
+    },
+    {
+      "id": "ADSL.TRT01P",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "DM.ARM",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "DM.ARM"
+    },
+    {
+      "id": "ADSL.SAFFL",
+      "type": "adam_variable",
+      "status": "yellow",
+      "label": "Partial reference match"
+    },
+    {
+      "id": "EX.EXSTDTC",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "EX.EXSTDTC"
+    },
+    {
+      "id": "ADSL.AGE",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reviewed"
+    },
+    {
+      "id": "DM.AGE",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "DM.AGE"
+    },
+    {
+      "id": "ADSL.SEX",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "DM.SEX",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "DM.SEX"
+    },
+    {
+      "id": "ADSL.RACE",
+      "type": "adam_variable",
+      "status": "yellow",
+      "label": "Partial reference match"
+    },
+    {
+      "id": "DM.RACE",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "DM.RACE"
+    },
+    {
+      "id": "ADSL.TRTSDT",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "ADSL.TRTEDT",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "EX.EXENDTC",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "EX.EXENDTC"
+    },
+    {
+      "id": "ADAE",
+      "type": "adam_dataset",
+      "status": "red",
+      "label": "Adverse Event Analysis Dataset"
+    },
+    {
+      "id": "ADAE.USUBJID",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "ADAE.TRT01P",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "ADAE.SAFFL",
+      "type": "adam_variable",
+      "status": "yellow",
+      "label": "Partial reference match"
+    },
+    {
+      "id": "ADAE.TRTEMFL",
+      "type": "adam_variable",
+      "status": "red",
+      "label": "AI generated, needs R review"
+    },
+    {
+      "id": "AE.AESTDTC",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "AE.AESTDTC"
+    },
+    {
+      "id": "ADAE.AEBODSYS",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "AE.AEBODSYS",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "AE.AEBODSYS"
+    },
+    {
+      "id": "ADAE.AEDECOD",
+      "type": "adam_variable",
+      "status": "green",
+      "label": "Reference spec match"
+    },
+    {
+      "id": "AE.AEDECOD",
+      "type": "source_variable",
+      "status": "neutral",
+      "label": "AE.AEDECOD"
+    },
+    {
+      "id": "T14.1.1",
+      "type": "output",
+      "status": "yellow",
+      "label": "Demographic and Baseline Characteristics"
+    },
+    {
+      "id": "T14.3.1",
+      "type": "output",
+      "status": "red",
+      "label": "Treatment-Emergent Adverse Events by System Organ Class and Preferred Term"
+    }
+  ],
+  "edges": [
+    {
+      "from": "ADSL.USUBJID",
+      "to": "ADSL"
+    },
+    {
+      "from": "DM.USUBJID",
+      "to": "ADSL.USUBJID"
+    },
+    {
+      "from": "ADSL.TRT01P",
+      "to": "ADSL"
+    },
+    {
+      "from": "DM.ARM",
+      "to": "ADSL.TRT01P"
+    },
+    {
+      "from": "ADSL.SAFFL",
+      "to": "ADSL"
+    },
+    {
+      "from": "EX.EXSTDTC",
+      "to": "ADSL.SAFFL"
+    },
+    {
+      "from": "ADSL.AGE",
+      "to": "ADSL"
+    },
+    {
+      "from": "DM.AGE",
+      "to": "ADSL.AGE"
+    },
+    {
+      "from": "ADSL.SEX",
+      "to": "ADSL"
+    },
+    {
+      "from": "DM.SEX",
+      "to": "ADSL.SEX"
+    },
+    {
+      "from": "ADSL.RACE",
+      "to": "ADSL"
+    },
+    {
+      "from": "DM.RACE",
+      "to": "ADSL.RACE"
+    },
+    {
+      "from": "ADSL.TRTSDT",
+      "to": "ADSL"
+    },
+    {
+      "from": "EX.EXSTDTC",
+      "to": "ADSL.TRTSDT"
+    },
+    {
+      "from": "ADSL.TRTEDT",
+      "to": "ADSL"
+    },
+    {
+      "from": "EX.EXENDTC",
+      "to": "ADSL.TRTEDT"
+    },
+    {
+      "from": "ADAE.USUBJID",
+      "to": "ADAE"
+    },
+    {
+      "from": "ADSL.USUBJID",
+      "to": "ADAE.USUBJID"
+    },
+    {
+      "from": "ADAE.TRT01P",
+      "to": "ADAE"
+    },
+    {
+      "from": "ADSL.TRT01P",
+      "to": "ADAE.TRT01P"
+    },
+    {
+      "from": "ADAE.SAFFL",
+      "to": "ADAE"
+    },
+    {
+      "from": "ADSL.SAFFL",
+      "to": "ADAE.SAFFL"
+    },
+    {
+      "from": "ADAE.TRTEMFL",
+      "to": "ADAE"
+    },
+    {
+      "from": "AE.AESTDTC",
+      "to": "ADAE.TRTEMFL"
+    },
+    {
+      "from": "ADSL.TRTSDT",
+      "to": "ADAE.TRTEMFL"
+    },
+    {
+      "from": "ADSL.TRTEDT",
+      "to": "ADAE.TRTEMFL"
+    },
+    {
+      "from": "ADAE.AEBODSYS",
+      "to": "ADAE"
+    },
+    {
+      "from": "AE.AEBODSYS",
+      "to": "ADAE.AEBODSYS"
+    },
+    {
+      "from": "ADAE.AEDECOD",
+      "to": "ADAE"
+    },
+    {
+      "from": "AE.AEDECOD",
+      "to": "ADAE.AEDECOD"
+    },
+    {
+      "from": "ADSL",
+      "to": "T14.1.1"
+    },
+    {
+      "from": "ADAE",
+      "to": "T14.3.1"
+    }
+  ]
+}

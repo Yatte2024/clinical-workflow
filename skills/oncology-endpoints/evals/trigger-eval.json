@@ -1,0 +1,22 @@
+[
+  {"query": "What is the overall response rate by treatment arm?", "should_trigger": true},
+  {"query": "Calculate ORR, DCR, and DOR for the intent-to-treat population", "should_trigger": true},
+  {"query": "Show the best overall response per RECIST 1.1 criteria", "should_trigger": true},
+  {"query": "What is the confirmed vs unconfirmed response rate?", "should_trigger": true},
+  {"query": "Define PFS for this oncology study", "should_trigger": true},
+  {"query": "What are the OS and PFS definitions used in this trial?", "should_trigger": true},
+  {"query": "Classify tumor responses using RECIST criteria", "should_trigger": true},
+  {"query": "Calculate the disease control rate at 12 weeks", "should_trigger": true},
+  {"query": "What ECOG performance status categories are used?", "should_trigger": true},
+  {"query": "Apply GRADE evidence framework to the primary endpoint", "should_trigger": true},
+  {"query": "Fit a Cox model for OS by treatment arm", "should_trigger": false},
+  {"query": "Calculate the hazard ratio with 95% CI", "should_trigger": false},
+  {"query": "Plot a Kaplan-Meier curve for PFS", "should_trigger": false},
+  {"query": "Create a waterfall plot of best percent change", "should_trigger": false},
+  {"query": "Run a log-rank test comparing treatment arms", "should_trigger": false},
+  {"query": "Check the proportional hazards assumption", "should_trigger": false},
+  {"query": "Review adverse events by SOC and PT", "should_trigger": false},
+  {"query": "Create an AE summary table", "should_trigger": false},
+  {"query": "What are the CTCAE grade 3+ lab abnormalities?", "should_trigger": false},
+  {"query": "Generate a demographics table for the safety population", "should_trigger": false}
+]

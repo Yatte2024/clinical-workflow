@@ -1,0 +1,75 @@
+outputs:
+  - id: T14.1.1
+    title: Demographic and Baseline Characteristics
+    type: table
+    dataset: ADSL
+    population: SAFFL == "Y"
+    filters:
+      - SAFFL == "Y"
+    group_by:
+      - TRT01P
+    required_variables:
+      - ADSL.USUBJID
+      - ADSL.TRT01P
+      - ADSL.SAFFL
+      - ADSL.AGE
+      - ADSL.SEX
+      - ADSL.RACE
+    columns:
+      - id: treatment_a
+        label: Treatment A
+        decimals: 1
+      - id: treatment_b
+        label: Treatment B
+        decimals: 1
+      - id: total
+        label: Total
+        decimals: 1
+    rows:
+      - label: Age, years
+        statistic: mean_sd
+      - label: Sex, n (%)
+        statistic: n_pct
+      - label: Race, n (%)
+        statistic: n_pct
+    footnotes:
+      - Percentages are based on the safety population.
+
+  - id: T14.3.1
+    title: Treatment-Emergent Adverse Events by System Organ Class and Preferred Term
+    type: table
+    dataset: ADAE
+    population: SAFFL == "Y"
+    filters:
+      - TRTEMFL == "Y"
+    group_by:
+      - TRT01P
+      - AEBODSYS
+      - AEDECOD
+    required_variables:
+      - ADAE.USUBJID
+      - ADAE.TRT01P
+      - ADAE.SAFFL
+      - ADAE.TRTEMFL
+      - ADAE.AEBODSYS
+      - ADAE.AEDECOD
+    columns:
+      - id: treatment_a
+        label: Treatment A
+        decimals: 1
+      - id: treatment_b
+        label: Treatment B
+        decimals: 1
+      - id: total
+        label: Total
+        decimals: 1
+    rows:
+      - label: Subjects with any TEAE, n (%)
+        statistic: n_pct
+      - label: System organ class, n (%)
+        statistic: n_pct
+      - label: Preferred term, n (%)
+        statistic: n_pct
+    footnotes:
+      - Events are counted once per subject within each system organ class and preferred term.
+

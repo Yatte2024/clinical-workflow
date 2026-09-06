@@ -1,0 +1,146 @@
+study:
+  id: DEMO-STUDY
+
+datasets:
+  - id: ADSL
+    label: Subject-Level Analysis Dataset
+    template: transmute
+    source: dm
+    variables:
+      - name: USUBJID
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - DM.USUBJID
+        reference_spec: Unique subject identifier.
+        current_spec: Unique subject identifier.
+        code: USUBJID = USUBJID
+      - name: TRT01P
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - DM.ARM
+        reference_spec: Planned treatment for period 01.
+        current_spec: Planned treatment for period 01.
+        code: TRT01P = ARM
+      - name: SAFFL
+        status: yellow
+        status_label: Partial reference match
+        spec_similarity: 82
+        sources:
+          - EX.EXSTDTC
+        reference_spec: Safety population flag. Set to Y for subjects who received at least one dose of study treatment.
+        current_spec: Safety population flag. Set to Y for subjects with non-missing treatment start date in EX.
+        code: "SAFFL = if_else(!is.na(TRTSDT), \"Y\", \"N\")"
+      - name: AGE
+        status: green
+        status_label: Reviewed
+        spec_similarity: 91
+        sources:
+          - DM.AGE
+        reference_spec: Age at informed consent.
+        current_spec: Age at informed consent.
+        code: AGE = AGE
+      - name: SEX
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - DM.SEX
+        reference_spec: Sex.
+        current_spec: Sex.
+        code: SEX = SEX
+      - name: RACE
+        status: yellow
+        status_label: Partial reference match
+        spec_similarity: 76
+        sources:
+          - DM.RACE
+        reference_spec: Race copied from DM.RACE using CDISC controlled terminology.
+        current_spec: Race copied from DM.RACE. Multiple race values are collapsed into MULTIPLE.
+        code: "RACE = if_else(RACE == \"MULTIPLE\", \"MULTIPLE\", RACE)"
+      - name: TRTSDT
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - EX.EXSTDTC
+        reference_spec: Date of first exposure to study treatment.
+        current_spec: Date of first exposure to study treatment.
+        code: TRTSDT = min(as.Date(EXSTDTC), na.rm = TRUE)
+      - name: TRTEDT
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - EX.EXENDTC
+        reference_spec: Date of last exposure to study treatment.
+        current_spec: Date of last exposure to study treatment.
+        code: TRTEDT = max(as.Date(EXENDTC), na.rm = TRUE)
+
+  - id: ADAE
+    label: Adverse Event Analysis Dataset
+    template: mutate
+    source: ae
+    pre_steps:
+      - "left_join(adsl, by = \"USUBJID\")"
+      - mutate(ASTDT = as.Date(AESTDTC))
+    variables:
+      - name: USUBJID
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - ADSL.USUBJID
+        reference_spec: Unique subject identifier copied from ADSL.USUBJID.
+        current_spec: Unique subject identifier copied from ADSL.USUBJID.
+        code: USUBJID = USUBJID
+      - name: TRT01P
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - ADSL.TRT01P
+        reference_spec: Planned treatment for period 01 copied from ADSL.
+        current_spec: Planned treatment for period 01 copied from ADSL.
+        code: TRT01P = TRT01P
+      - name: SAFFL
+        status: yellow
+        status_label: Partial reference match
+        spec_similarity: 82
+        sources:
+          - ADSL.SAFFL
+        reference_spec: Safety population flag copied from ADSL.SAFFL.
+        current_spec: Safety population flag copied from ADSL.SAFFL after AE to ADSL merge.
+        code: SAFFL = SAFFL
+      - name: TRTEMFL
+        status: red
+        status_label: AI generated, needs R review
+        spec_similarity: 0
+        sources:
+          - AE.AESTDTC
+          - ADSL.TRTSDT
+          - ADSL.TRTEDT
+        reference_spec: No matching reference spec found.
+        current_spec: Treatment-emergent flag. Set to Y when AE start date is on or after treatment start date and on or before treatment end date.
+        code: "TRTEMFL = if_else(ASTDT >= TRTSDT & ASTDT <= TRTEDT, \"Y\", \"N\")"
+      - name: AEBODSYS
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - AE.AEBODSYS
+        reference_spec: Body system or organ class.
+        current_spec: Body system or organ class.
+        code: AEBODSYS = AEBODSYS
+      - name: AEDECOD
+        status: green
+        status_label: Reference spec match
+        spec_similarity: 100
+        sources:
+          - AE.AEDECOD
+        reference_spec: Dictionary-derived preferred term.
+        current_spec: Dictionary-derived preferred term.
+        code: AEDECOD = AEDECOD

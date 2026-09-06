@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DAG Test</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f5f6f8, #101215);
+      --surface: light-dark(#ffffff, #171a20);
+      --surface-2: light-dark(#f0f3f7, #20242c);
+      --text: light-dark(#1f2633, #eef2f7);
+      --muted: light-dark(#687386, #a6afbd);
+      --line: light-dark(#d9e0ea, #343b46);
+      --green: #1f9d55;
+      --yellow: #d89614;
+      --red: #d64545;
+      --blue: #2d6cdf;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 15px; }
+    h3 { font-size: 13px; color: var(--muted); font-weight: 700; }
+    .muted { color: var(--muted); }
+    .content {
+      padding: 16px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      overflow: auto;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .panel-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .panel-body { padding: 14px; }
+    .dag-board {
+      display: grid;
+      gap: 10px;
+      min-width: 860px;
+    }
+    .dag-header, .output-row {
+      display: grid;
+      grid-template-columns: minmax(360px, 1.3fr) 54px minmax(280px, 0.9fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+    .output-row {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: light-dark(#fbfcfe, #141820);
+    }
+    .input-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: center;
+    }
+    .group-card, .output-card, .var-card, .source-chip {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 6px;
+      padding: 9px 10px;
+      min-width: 0;
+    }
+    .group-card, .output-card, .var-card {
+      cursor: pointer;
+      text-align: left;
+    }
+    .group-card {
+      width: 142px;
+      border-left: 4px solid var(--blue);
+    }
+    .output-card {
+      width: 100%;
+      border-left: 4px solid var(--blue);
+    }
+    .output-card.green { border-left-color: var(--green); }
+    .output-card.yellow { border-left-color: var(--yellow); }
+    .output-card.red { border-left-color: var(--red); }
+    .arrow {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+    .small { font-size: 12px; color: var(--muted); }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.8fr) 1fr;
+      gap: 14px;
+    }
+    .dataset-list {
+      display: grid;
+      gap: 8px;
+    }
+    button {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 9px 10px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button[aria-pressed="true"] {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: light-dark(#edf4ff, #172033);
+    }
+    .var-lanes {
+      display: grid;
+      gap: 8px;
+    }
+    .var-lane {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 42px minmax(260px, 1fr);
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: light-dark(#fbfcfe, #141820);
+    }
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .source-chip {
+      font-size: 12px;
+      background: var(--surface-2);
+    }
+    .var-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .var-card.green { border-left: 4px solid var(--green); }
+    .var-card.yellow { border-left: 4px solid var(--yellow); }
+    .var-card.red { border-left: 4px solid var(--red); }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .dot.green { background: var(--green); }
+    .dot.yellow { background: var(--yellow); }
+    .dot.red { background: var(--red); }
+    @media (max-width: 880px) {
+      .split, .dag-header, .output-row, .var-lane {
+        grid-template-columns: 1fr;
+      }
+      .arrow { display: none; }
+      .dag-board { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1>DAG Test Version</h1>
+        <div class="muted">Two-level DAG: output dependency groups first, variable lineage on selection</div>
+      </div>
+      <div class="muted">prototype</div>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+
+  <script>
+    window.__DAG_TEST_STATE__ = "__DAG_TEST_STATE_JSON__";
+    let state;
+    let selectedGroup = "ADAE";
+
+    function esc(v) {
+      return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function datasets() { return state?.adam?.datasets || []; }
+    function outputs() { return state?.dpp?.outputs || []; }
+    function findDataset(id) { return datasets().find(ds => ds.id === id); }
+    function findVariable(dsId, name) { return findDataset(dsId)?.variables?.find(v => v.name === name); }
+    function variableStatus(full) {
+      const [ds, name] = String(full).split(".");
+      const v = findVariable(ds, name);
+      return v?.status || "green";
+    }
+    function outputStatus(output) {
+      const statuses = (output.required_variables || []).map(variableStatus);
+      if (statuses.includes("red")) return "red";
+      if (statuses.includes("yellow")) return "yellow";
+      return "green";
+    }
+    function inputGroups(output) {
+      const groups = new Map();
+      for (const variable of output.required_variables || []) {
+        const prefix = String(variable).split(".")[0];
+        const type = findDataset(prefix) ? "ADaM" : "SDTM";
+        if (!groups.has(prefix)) groups.set(prefix, { id: prefix, type, variables: [] });
+        groups.get(prefix).variables.push(variable);
+      }
+      return [...groups.values()];
+    }
+    function outputsForGroup(groupId) {
+      return outputs().filter(output => inputGroups(output).some(group => group.id === groupId));
+    }
+    function renderOutputRows() {
+      return outputs().map(output => `
+        <div class="output-row">
+          <div class="input-groups">
+            ${inputGroups(output).map(group => `
+              <button class="group-card" data-group="${esc(group.id)}">
+                <div class="mono">${esc(group.id)}</div>
+                <div class="small">${esc(group.type)} · ${group.variables.length} vars</div>
+              </button>
+            `).join("")}
+          </div>
+          <div class="arrow">-></div>
+          <button class="output-card ${outputStatus(output)}" data-output="${esc(output.id)}">
+            <div class="mono">${esc(output.id)}</div>
+            <div>${esc(output.title)}</div>
+            <div class="small">${esc(outputStatus(output))}</div>
+          </button>
+        </div>
+      `).join("");
+    }
+    function renderVariableLanes() {
+      const ds = findDataset(selectedGroup);
+      if (!ds) {
+        const used = outputsForGroup(selectedGroup).flatMap(output => output.required_variables || []).filter(v => v.startsWith(`${selectedGroup}.`));
+        return used.map(variable => `
+          <div class="var-lane">
+            <div class="sources"><span class="source-chip mono">${esc(variable)}</span></div>
+            <div class="arrow">-></div>
+            <div class="var-card green"><span class="dot green"></span><span class="mono">${esc(selectedGroup)}</span><span class="small">SDTM direct</span></div>
+          </div>
+        `).join("") || `<div class="muted">Select an ADaM or SDTM input group above.</div>`;
+      }
+      return (ds.variables || []).map(variable => `
+        <div class="var-lane">
+          <div class="sources">${(variable.sources || ["Spec"]).map(source => `<span class="source-chip mono">${esc(source)}</span>`).join("")}</div>
+          <div class="arrow">-></div>
+          <button class="var-card ${esc(variable.status)}" data-var="${esc(ds.id)}.${esc(variable.name)}">
+            <span class="dot ${esc(variable.status)}"></span>
+            <span><span class="mono">${esc(ds.id)}.${esc(variable.name)}</span><br><span class="small">${esc(variable.status_label)}</span></span>
+            <span class="small">${esc(variable.spec_similarity)}%</span>
+          </button>
+        </div>
+      `).join("");
+    }
+    function renderDatasetButtons() {
+      const groups = new Set();
+      outputs().forEach(output => inputGroups(output).forEach(group => groups.add(group.id)));
+      return [...groups].map(group => `<button data-select-group="${esc(group)}" aria-pressed="${group === selectedGroup}">${esc(group)}</button>`).join("");
+    }
+    function render() {
+      document.getElementById("app").innerHTML = `
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Level 1: Output Dependencies</h2>
+              <div class="small">Each output row shows only the input groups it needs. No variable spaghetti.</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="dag-board">
+              <div class="dag-header"><h3>Input groups inferred from required variables</h3><h3></h3><h3>Outputs</h3></div>
+              ${renderOutputRows()}
+            </div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Level 2: Variable Lineage For ${esc(selectedGroup)}</h2>
+              <div class="small">Sources come from ADaM specs. Each row is one variable.</div>
+            </div>
+            <div class="dataset-list">${renderDatasetButtons()}</div>
+          </div>
+          <div class="panel-body">
+            <div class="var-lanes">${renderVariableLanes()}</div>
+          </div>
+        </section>
+      `;
+      document.querySelectorAll("[data-group], [data-select-group]").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedGroup = button.dataset.group || button.dataset.selectGroup;
+          render();
+        });
+      });
+      document.querySelectorAll("[data-output]").forEach(button => {
+        button.addEventListener("click", () => {
+          window.location.href = `/?output=${encodeURIComponent(button.dataset.output)}`;
+        });
+      });
+      document.querySelectorAll("[data-var]").forEach(button => {
+        button.addEventListener("click", () => {
+          window.location.href = `/?variable=${encodeURIComponent(button.dataset.var)}`;
+        });
+      });
+    }
+    async function init() {
+      if (window.__DAG_TEST_STATE__ && window.__DAG_TEST_STATE__ !== "__DAG_TEST_STATE_JSON__") {
+        state = JSON.parse(window.__DAG_TEST_STATE__);
+      } else {
+        const response = await fetch("/api/state");
+        state = await response.json();
+      }
+      render();
+    }
+    init().catch(error => {
+      document.getElementById("app").innerHTML = `<section class="panel"><div class="panel-body">${esc(error.message)}</div></section>`;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  {"query": "Create an ARD object for the demographics table", "should_trigger": true},
+  {"query": "Use the cards package to compute summary statistics", "should_trigger": true},
+  {"query": "Build an analysis results dataset for the primary endpoint", "should_trigger": true},
+  {"query": "Pre-calculate statistics using ARD for the AE summary", "should_trigger": true},
+  {"query": "Create a CDISC-compliant ARD for the lab results", "should_trigger": true},
+  {"query": "Use cardx to run a regression model and store results as ARD", "should_trigger": true},
+  {"query": "QC the existing demographics table using ARD comparison", "should_trigger": true},
+  {"query": "Generate an ARD with mean, median, and SD for continuous variables", "should_trigger": true},
+  {"query": "How do I structure an analysis results data object in R?", "should_trigger": true},
+  {"query": "Convert this gtsummary table to ARD format", "should_trigger": true},
+  {"query": "Create a demographics table using gtsummary", "should_trigger": false},
+  {"query": "Run a chi-square test on response rates", "should_trigger": false},
+  {"query": "Plot a forest plot of subgroup analyses", "should_trigger": false},
+  {"query": "Validate this ADaM dataset against CDISC rules", "should_trigger": false},
+  {"query": "Create an AE summary table with SOC and PT", "should_trigger": false},
+  {"query": "What is the ORR by treatment arm?", "should_trigger": false},
+  {"query": "Review the safety signals in this study", "should_trigger": false},
+  {"query": "Profile the datasets in this study", "should_trigger": false},
+  {"query": "Calculate the hazard ratio for OS", "should_trigger": false},
+  {"query": "Show me the R code style conventions", "should_trigger": false}
+]

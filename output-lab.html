@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reference-Guided Clinical Programming Assistant</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f5f6f8, #101215);
+      --surface: light-dark(#ffffff, #171a20);
+      --surface-2: light-dark(#eef1f5, #20242c);
+      --text: light-dark(#1f2633, #eef2f7);
+      --muted: light-dark(#667085, #a5adba);
+      --line: light-dark(#d8dee8, #343a45);
+      --green: #1f9d55;
+      --yellow: #d89614;
+      --red: #d64545;
+      --blue: #2d6cdf;
+      --code: light-dark(#172033, #dce7ff);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    .app { min-height: 100vh; display: grid; grid-template-columns: 220px 1fr; }
+    aside {
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .brand { padding: 4px 8px 12px; border-bottom: 1px solid var(--line); }
+    .brand h1 { margin: 0 0 6px; font-size: 16px; line-height: 1.2; }
+    .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+    nav { display: grid; gap: 6px; }
+    button {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    button[aria-pressed="true"] {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: light-dark(#edf4ff, #172033);
+    }
+    main { min-width: 0; display: grid; grid-template-rows: auto 1fr; }
+    header {
+      min-height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 18px; }
+    .sub { color: var(--muted); font-size: 13px; }
+    .content { overflow: auto; padding: 16px; display: grid; gap: 14px; align-content: start; }
+    .grid { display: grid; gap: 14px; }
+    .cols-2 { grid-template-columns: minmax(320px, 40%) 1fr; }
+    .cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .panel h3 {
+      margin: 0;
+      padding: 12px 14px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-body { padding: 14px; }
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .metric b { display: block; font-size: 22px; }
+    .metric span { color: var(--muted); font-size: 12px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
+    .green { background: var(--green); }
+    .yellow { background: var(--yellow); }
+    .red { background: var(--red); }
+    .row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; overflow-wrap: anywhere; }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; color: var(--muted); }
+    .dag {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+    .lineage-map {
+      display: grid;
+      gap: 10px;
+    }
+    .focus-query {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 10px;
+    }
+    input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+    }
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .suggestions button {
+      min-width: 146px;
+    }
+    .focus-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 14px;
+    }
+    .focus-graph {
+      overflow: auto;
+      background: light-dark(#fbfcfe, #111419);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .focus-graph svg {
+      display: block;
+    }
+    .focus-edge {
+      fill: none;
+      stroke: var(--blue);
+      stroke-width: 2.5;
+      stroke-linecap: square;
+    }
+    .focus-node rect {
+      fill: var(--surface);
+      stroke: var(--line);
+      stroke-width: 1;
+      rx: 6;
+    }
+    .focus-node text { fill: var(--text); font-size: 12px; pointer-events: none; }
+    .focus-node .label { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+    .focus-node .meta { fill: var(--muted); font-size: 11px; }
+    .focus-rail { stroke-width: 4; stroke-linecap: round; }
+    .focus-node.green .focus-rail { stroke: var(--green); }
+    .focus-node.yellow .focus-rail { stroke: var(--yellow); }
+    .focus-node.red .focus-rail { stroke: var(--red); }
+    .focus-node.neutral .focus-rail { stroke: var(--blue); }
+    .focus-node.selected rect {
+      stroke: var(--blue);
+      stroke-width: 2;
+    }
+    .detail-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .detail-item {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      padding: 9px 10px;
+    }
+    .lineage-board {
+      position: relative;
+      overflow: auto;
+      background: light-dark(#fbfcfe, #111419);
+      padding: 12px;
+    }
+    .dag-board {
+      display: grid;
+      gap: 10px;
+      min-width: 860px;
+    }
+    .dag-header, .output-row {
+      display: grid;
+      grid-template-columns: minmax(360px, 1.3fr) 54px minmax(280px, 0.9fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+    .output-row {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: light-dark(#fbfcfe, #141820);
+    }
+    .input-groups {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-content: center;
+    }
+    .group-card, .output-card, .var-card, .source-chip {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 6px;
+      padding: 9px 10px;
+      min-width: 0;
+    }
+    .group-card, .output-card, .var-card {
+      cursor: pointer;
+      text-align: left;
+    }
+    .group-card {
+      width: 142px;
+      border-left: 4px solid var(--blue);
+    }
+    .output-card {
+      width: 100%;
+      border-left: 4px solid var(--blue);
+    }
+    .output-card.green { border-left-color: var(--green); }
+    .output-card.yellow { border-left-color: var(--yellow); }
+    .output-card.red { border-left-color: var(--red); }
+    .dataset-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .var-lanes {
+      display: grid;
+      gap: 8px;
+    }
+    .var-lane {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 42px minmax(260px, 1fr);
+      gap: 8px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: light-dark(#fbfcfe, #141820);
+    }
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .source-chip {
+      font-size: 12px;
+      background: var(--surface-2);
+    }
+    .var-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .var-card.green { border-left: 4px solid var(--green); }
+    .var-card.yellow { border-left: 4px solid var(--yellow); }
+    .var-card.red { border-left: 4px solid var(--red); }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .dot.green { background: var(--green); }
+    .dot.yellow { background: var(--yellow); }
+    .dot.red { background: var(--red); }
+    .lineage-dataset {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 190px 260px;
+      gap: 14px;
+      align-items: stretch;
+      margin-bottom: 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .lineage-rows {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+    .lineage-row {
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) 34px minmax(170px, 0.9fr);
+      gap: 8px;
+      align-items: center;
+      padding: 6px;
+      border-radius: 6px;
+      background: light-dark(#f8fafc, #141820);
+    }
+    .lineage-chip, .lineage-card {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 6px;
+      padding: 8px 10px;
+      min-height: 38px;
+    }
+    .lineage-card {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: center;
+      cursor: pointer;
+    }
+    .lineage-card.green { border-left: 4px solid var(--green); }
+    .lineage-card.yellow { border-left: 4px solid var(--yellow); }
+    .lineage-card.red { border-left: 4px solid var(--red); }
+    .lineage-sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .lineage-chip {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      background: var(--surface-2);
+    }
+    .dataset-node, .output-stack {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 12px;
+      min-width: 0;
+    }
+    .dataset-node {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      cursor: pointer;
+      border-left: 4px solid var(--blue);
+    }
+    .dataset-node strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .output-button {
+      display: block;
+      width: 100%;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .edge-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) 42px minmax(120px, 1fr) 42px minmax(160px, 1.2fr);
+      gap: 10px;
+      align-items: center;
+    }
+    .arrow {
+      color: var(--muted);
+      text-align: center;
+      font-weight: 700;
+    }
+    .lane-title { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+    .node {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .node strong { display: block; margin-bottom: 4px; }
+    .node small { color: var(--muted); }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .diff {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .diff-box {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--surface-2);
+    }
+    .diff-box h4 {
+      margin: 0;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .diff-box div {
+      padding: 10px;
+      min-height: 82px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 560px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      padding: 14px;
+      background: light-dark(#fbfcfe, #111419);
+      color: var(--code);
+      font: 13px/1.48 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      tab-size: 2;
+    }
+    textarea.code-editor {
+      min-height: 180px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      background: light-dark(#fbfcfe, #111419);
+      color: var(--code);
+      font: 13px/1.48 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th, td { border: 1px solid var(--line); padding: 9px 10px; overflow-wrap: anywhere; vertical-align: top; }
+    th { background: var(--surface-2); text-align: left; }
+    th:not(:first-child), td:not(:first-child) { text-align: right; }
+    details {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    summary { cursor: pointer; padding: 12px 14px; font-weight: 700; }
+    details[open] summary { border-bottom: 1px solid var(--line); }
+    .error { color: var(--red); font-size: 12px; }
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+      nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .cols-2, .cols-3, .dag, .diff, .edge-row, .dag-header, .output-row, .var-lane, .focus-query, .focus-layout { grid-template-columns: 1fr; }
+      .arrow { display: none; }
+      .dag-board { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <h1>Clinical Programming Assistant</h1>
+        <p>Reference-guided R code generation and review</p>
+      </div>
+      <nav>
+        <button type="button" data-view="overall" aria-pressed="true">Overall</button>
+        <button type="button" data-view="adam" aria-pressed="false">ADaM</button>
+        <button type="button" data-view="output" aria-pressed="false">Output Lab</button>
+      </nav>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <h2 id="pageTitle">Overall</h2>
+          <div class="sub" id="pageSub">Study map, coverage, and review status</div>
+        </div>
+        <div class="sub">DEMO-STUDY</div>
+      </header>
+      <div class="content" id="content"></div>
+    </main>
+  </div>
+
+  <script>
+    let state = null;
+    let view = "overall";
+    let dataset = "ADAE";
+    let variable = "TRTEMFL";
+    let outputId = "T14.3.1";
+    let dppText = "";
+    let selectedGroup = "ADAE";
+    let focusSelected = "ADSL.SAFFL";
+    let focusQuery = "";
+
+    function esc(v) {
+      return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function setHeader(title, sub) {
+      document.getElementById("pageTitle").textContent = title;
+      document.getElementById("pageSub").textContent = sub;
+    }
+    function datasets() {
+      return state?.adam?.datasets || [];
+    }
+    function outputs() {
+      return state?.dpp?.outputs || [];
+    }
+    function findDataset(id) {
+      return datasets().find(ds => ds.id === id) || datasets()[0];
+    }
+    function findVariable(dsId, name) {
+      return findDataset(dsId)?.variables?.find(v => v.name === name);
+    }
+    function variableStatus(full) {
+      const [ds, name] = String(full).split(".");
+      const found = findVariable(ds, name);
+      return found ? [found.status, found.status_label] : ["red", "Not mapped"];
+    }
+    function countStatus(color) {
+      return datasets().flatMap(ds => ds.variables || []).filter(v => v.status === color).length;
+    }
+    function datasetStatus(ds) {
+      const statuses = (ds.variables || []).map(v => v.status);
+      if (statuses.includes("red")) return "red";
+      if (statuses.includes("yellow")) return "yellow";
+      return "green";
+    }
+    function outputStatus(output) {
+      const statuses = (output.required_variables || []).map(v => variableStatus(v)[0]);
+      if (statuses.includes("red")) return "red";
+      if (statuses.includes("yellow")) return "yellow";
+      return "green";
+    }
+    function allVariables() {
+      return datasets().flatMap(ds => (ds.variables || []).map(v => ({ ...v, id: `${ds.id}.${v.name}`, dataset: ds.id })));
+    }
+    function findVariableById(id) {
+      return allVariables().find(v => v.id === id);
+    }
+    function buildFocusEdges() {
+      const edges = [];
+      for (const ds of datasets()) {
+        for (const variableSpec of ds.variables || []) {
+          const variableId = `${ds.id}.${variableSpec.name}`;
+          for (const source of variableSpec.sources || []) edges.push([source, variableId]);
+          edges.push([variableId, ds.id]);
+        }
+      }
+      for (const output of outputs()) edges.push([output.dataset, output.id]);
+      return edges;
+    }
+    function focusNodeMeta(id) {
+      const variableSpec = findVariableById(id);
+      if (variableSpec) return { type: "ADaM variable", status: variableSpec.status, label: variableSpec.status_label };
+      const ds = datasets().find(item => item.id === id);
+      if (ds) return { type: "ADaM dataset", status: datasetStatus(ds), label: ds.label };
+      const output = outputs().find(item => item.id === id);
+      if (output) return { type: "Output", status: outputStatus(output), label: output.title };
+      return { type: "Source variable", status: "neutral", label: "source" };
+    }
+    function downstreamNodes(start) {
+      const edges = buildFocusEdges();
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length) {
+        const current = queue.shift();
+        for (const [from, to] of edges) {
+          if (from === current && !seen.has(to)) {
+            seen.add(to);
+            queue.push(to);
+          }
+        }
+      }
+      return seen;
+    }
+    function upstreamNodes(start) {
+      const edges = buildFocusEdges();
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length) {
+        const current = queue.shift();
+        for (const [from, to] of edges) {
+          if (to === current && !seen.has(from)) {
+            seen.add(from);
+            queue.push(from);
+          }
+        }
+      }
+      return seen;
+    }
+    function focusSubgraph() {
+      const allNodeIds = new Set(buildFocusEdges().flat());
+      if (!allNodeIds.has(focusSelected)) {
+        focusSelected = allVariables()[0]?.id || outputs()[0]?.id || "";
+      }
+      const nodes = new Set([...upstreamNodes(focusSelected), ...downstreamNodes(focusSelected)]);
+      const edges = buildFocusEdges().filter(([from, to]) => nodes.has(from) && nodes.has(to));
+      return { nodes: [...nodes], edges };
+    }
+    function focusSearchResults() {
+      const nodes = [
+        ...new Set([
+          ...allVariables().map(v => v.id),
+          ...datasets().map(ds => ds.id),
+          ...outputs().map(output => output.id),
+          ...buildFocusEdges().flat()
+        ])
+      ];
+      const q = focusQuery.trim().toLowerCase();
+      return nodes.filter(id => !q || id.toLowerCase().includes(q)).slice(0, 18);
+    }
+    function focusLayout(nodes, edges) {
+      const nodeSet = new Set(nodes);
+      const incoming = new Map(nodes.map(id => [id, []]));
+      for (const [from, to] of edges) {
+        if (nodeSet.has(from) && nodeSet.has(to)) incoming.get(to).push(from);
+      }
+      const memo = new Map();
+      function rank(id, visiting = new Set()) {
+        if (memo.has(id)) return memo.get(id);
+        if (visiting.has(id)) return 0;
+        visiting.add(id);
+        const parents = incoming.get(id) || [];
+        const value = parents.length ? Math.max(...parents.map(parent => rank(parent, visiting) + 1)) : 0;
+        visiting.delete(id);
+        memo.set(id, value);
+        return value;
+      }
+      const groupsByRank = new Map();
+      for (const id of nodes) {
+        const key = rank(id);
+        if (!groupsByRank.has(key)) groupsByRank.set(key, []);
+        groupsByRank.get(key).push(id);
+      }
+      const typeOrder = { "Source variable": 0, "ADaM variable": 1, "ADaM dataset": 2, "Output": 3 };
+      const groups = [...groupsByRank.entries()]
+        .sort(([a], [b]) => a - b)
+        .map(([, group]) => group.sort((a, b) => {
+          const byType = typeOrder[focusNodeMeta(a).type] - typeOrder[focusNodeMeta(b).type];
+          return byType || a.localeCompare(b);
+        }));
+      const positions = {};
+      const nodeW = 190;
+      const nodeH = 44;
+      const columnGap = 130;
+      const rowGap = 18;
+      const marginX = 28;
+      const marginY = 26;
+      const width = Math.max(980, marginX * 2 + groups.length * nodeW + Math.max(groups.length - 1, 0) * columnGap);
+      const maxRows = Math.max(...groups.map(group => group.length), 1);
+      const height = Math.max(430, marginY * 2 + maxRows * nodeH + (maxRows - 1) * rowGap);
+      groups.forEach((group, col) => {
+        const total = group.length * nodeH + (group.length - 1) * rowGap;
+        const startY = Math.max(marginY, (height - total) / 2);
+        group.forEach((id, row) => {
+          positions[id] = { x: marginX + col * (nodeW + columnGap), y: startY + row * (nodeH + rowGap) };
+        });
+      });
+      return { positions, width, height, nodeW, nodeH };
+    }
+    function renderFocusGraph() {
+      const graph = focusSubgraph();
+      const { positions, width, height, nodeW, nodeH } = focusLayout(graph.nodes, graph.edges);
+      const path = ([from, to]) => {
+        const a = positions[from];
+        const b = positions[to];
+        if (!a || !b) return "";
+        const x1 = a.x + nodeW;
+        const y1 = a.y + nodeH / 2;
+        const x2 = b.x;
+        const y2 = b.y + nodeH / 2;
+        const mid = x1 + Math.max(42, (x2 - x1) / 2);
+        return `M ${x1 + 8} ${y1} H ${mid} V ${y2} H ${x2 - 8}`;
+      };
+      const edges = graph.edges.map(edge => `<path class="focus-edge" d="${path(edge)}"></path>`).join("");
+      const nodes = graph.nodes.map(id => {
+        const meta = focusNodeMeta(id);
+        const pos = positions[id];
+        return `<g class="focus-node ${esc(meta.status)} ${id === focusSelected ? "selected" : ""}" transform="translate(${pos.x},${pos.y})" data-focus-node="${esc(id)}">
+          <rect width="${nodeW}" height="${nodeH}"></rect>
+          <line class="focus-rail" x1="8" y1="8" x2="8" y2="${nodeH - 8}"></line>
+          <text class="label" x="18" y="18">${esc(id)}</text>
+          <text class="meta" x="18" y="34">${esc(String(meta.label || meta.type).slice(0, 24))}</text>
+        </g>`;
+      }).join("");
+      return `<div class="focus-graph"><svg viewBox="0 0 ${width} ${height}" style="min-width:${width}px;height:${height}px;" role="img" aria-label="Focused downstream impact graph">${edges}${nodes}</svg></div>`;
+    }
+    function renderFocusDetails() {
+      const graph = focusSubgraph();
+      const affectedVariables = graph.nodes.filter(id => focusNodeMeta(id).type === "ADaM variable" && id !== focusSelected);
+      const affectedDatasets = graph.nodes.filter(id => focusNodeMeta(id).type === "ADaM dataset");
+      const affectedOutputs = graph.nodes.filter(id => focusNodeMeta(id).type === "Output");
+      return `
+        <div class="grid cols-3">
+          <div class="metric"><b>${affectedVariables.length}</b><span>affected ADaM variables</span></div>
+          <div class="metric"><b>${affectedDatasets.length}</b><span>affected ADaM datasets</span></div>
+          <div class="metric"><b>${affectedOutputs.length}</b><span>affected outputs</span></div>
+        </div>
+        <div class="detail-list">
+          <div class="detail-item"><b class="mono">${esc(focusSelected)}</b><div class="small">${esc(focusNodeMeta(focusSelected).type)} · ${esc(focusNodeMeta(focusSelected).label)}</div></div>
+          <div class="detail-item"><b>Downstream outputs</b><div class="small">${affectedOutputs.map(id => `<button type="button" data-output-target="${esc(id)}"><span class="mono">${esc(id)}</span></button>`).join(" ") || "None"}</div></div>
+        </div>`;
+    }
+    function inputGroups(output) {
+      const groups = new Map();
+      for (const variableName of output.required_variables || []) {
+        const prefix = String(variableName).split(".")[0];
+        const type = findDataset(prefix) ? "ADaM" : "SDTM";
+        if (!groups.has(prefix)) groups.set(prefix, { id: prefix, type, variables: [] });
+        groups.get(prefix).variables.push(variableName);
+      }
+      return [...groups.values()];
+    }
+    function outputsForGroup(groupId) {
+      return outputs().filter(output => inputGroups(output).some(group => group.id === groupId));
+    }
+    function datasetScript(ds) {
+      const snippets = (ds.variables || []).map(v => `    ${v.code || `${v.name} = ${v.name}`}`).join(",\n");
+      if (ds.template === "transmute") {
+        return `library(dplyr)\n\n${ds.id.toLowerCase()} <- ${ds.source || ds.id.toLowerCase()} |>\n  transmute(\n${snippets}\n  )`;
+      }
+      const preSteps = (ds.pre_steps || []).map(step => `  ${step} |>`).join("\n");
+      return `library(dplyr)\n\n${ds.id.toLowerCase()} <- ${ds.source || ds.id.toLowerCase()} |>\n${preSteps ? `${preSteps}\n` : ""}  mutate(\n${snippets}\n  ) |>\n  select(${(ds.variables || []).map(v => v.name).join(", ")})`;
+    }
+    function outputScript(output) {
+      const filters = (output.filters || []).map(filter => `  filter(${filter}) |>`).join("\n");
+      const name = String(output.id || "output").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+      return `library(dplyr)\n\n${name} <- ${String(output.dataset || "adam").toLowerCase()} |>\n  filter(${output.population || "TRUE"}) |>\n${filters ? `${filters}\n` : ""}  group_by(${(output.group_by || ["TRT01P"]).join(", ")}) |>\n  summarise(n = n_distinct(USUBJID), .groups = "drop")`;
+    }
+    function mockValue(stat, decimals) {
+      const d = Number.isFinite(Number(decimals)) ? Number(decimals) : 1;
+      if (stat === "mean_sd") return `xx.${"x".repeat(d)} (x.${"x".repeat(d + 1)})`;
+      if (stat === "n_pct") return `xx (xx.${"x".repeat(d)}%)`;
+      return `xx.${"x".repeat(d)}`;
+    }
+    async function api(path, body) {
+      const res = await fetch(path, {
+        method: body ? "POST" : "GET",
+        headers: body ? { "content-type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      if (!res.ok) throw new Error(await res.text());
+      state = await res.json();
+      dppText = state.dppText;
+      return state;
+    }
+    function selectView(next) {
+      view = next;
+      document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+      render();
+    }
+    document.querySelectorAll("nav button").forEach(button => {
+      button.addEventListener("click", () => selectView(button.dataset.view));
+    });
+
+    function renderOutputDependencyRows() {
+      return outputs().map(output => `
+        <div class="output-row">
+          <div class="input-groups">
+            ${inputGroups(output).map(group => `
+              <button type="button" class="group-card" data-group="${esc(group.id)}">
+                <div class="mono">${esc(group.id)}</div>
+                <div class="small">${esc(group.type)} · ${group.variables.length} vars</div>
+              </button>
+            `).join("")}
+          </div>
+          <div class="arrow">-></div>
+          <button type="button" class="output-card ${outputStatus(output)}" data-output-target="${esc(output.id)}">
+            <div class="mono">${esc(output.id)}</div>
+            <div>${esc(output.title)}</div>
+            <div class="small">${esc(outputStatus(output))}</div>
+          </button>
+        </div>
+      `).join("");
+    }
+    function renderGroupButtons() {
+      const groups = new Set();
+      outputs().forEach(output => inputGroups(output).forEach(group => groups.add(group.id)));
+      return [...groups].map(group => `<button type="button" data-select-group="${esc(group)}" aria-pressed="${group === selectedGroup}">${esc(group)}</button>`).join("");
+    }
+    function renderSelectedGroupLineage() {
+      const ds = findDataset(selectedGroup);
+      if (!ds) {
+        const used = outputsForGroup(selectedGroup).flatMap(output => output.required_variables || []).filter(v => v.startsWith(`${selectedGroup}.`));
+        return used.map(variableName => `
+          <div class="var-lane">
+            <div class="sources"><span class="source-chip mono">${esc(variableName)}</span></div>
+            <div class="arrow">-></div>
+            <div class="var-card green"><span class="dot green"></span><span class="mono">${esc(selectedGroup)}</span><span class="small">SDTM direct</span></div>
+          </div>
+        `).join("") || `<div class="muted">Select an ADaM or SDTM input group above.</div>`;
+      }
+      return (ds.variables || []).map(variableSpec => `
+        <div class="var-lane">
+          <div class="sources">${(variableSpec.sources || ["Spec"]).map(source => `<span class="source-chip mono">${esc(source)}</span>`).join("")}</div>
+          <div class="arrow">-></div>
+          <button type="button" class="var-card ${esc(variableSpec.status)}" data-target="${esc(ds.id)}.${esc(variableSpec.name)}">
+            <span class="dot ${esc(variableSpec.status)}"></span>
+            <span><span class="mono">${esc(ds.id)}.${esc(variableSpec.name)}</span><br><span class="small">${esc(variableSpec.status_label)}</span></span>
+            <span class="small">${esc(variableSpec.spec_similarity)}%</span>
+          </button>
+        </div>
+      `).join("");
+    }
+    function bindNavigationTargets() {
+      document.querySelectorAll("[data-target]").forEach(node => node.addEventListener("click", () => {
+        const [ds, name] = node.dataset.target.split(".");
+        dataset = ds;
+        variable = name;
+        selectView("adam");
+      }));
+      document.querySelectorAll("[data-dataset-target]").forEach(node => node.addEventListener("click", () => {
+        dataset = node.dataset.datasetTarget;
+        variable = findDataset(dataset)?.variables?.[0]?.name || "";
+        selectView("adam");
+      }));
+      document.querySelectorAll("[data-output-target]").forEach(node => node.addEventListener("click", () => {
+        outputId = node.dataset.outputTarget;
+        selectView("output");
+      }));
+    }
+    function renderOverall() {
+      setHeader("Overall", "Spec-driven variable lineage and downstream output impact");
+      document.getElementById("content").innerHTML = `
+        <section class="panel">
+          <h3>ADaM Variable Coverage</h3>
+          <div class="panel-body grid cols-3">
+            <div class="metric"><b>${countStatus("green")}</b><span>green variables</span></div>
+            <div class="metric"><b>${countStatus("yellow")}</b><span>partial matches needing review</span></div>
+            <div class="metric"><b>${countStatus("red")}</b><span>AI generated variables needing R review</span></div>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>Search Impact</h3>
+          <div class="panel-body">
+            <div class="focus-query">
+              <input id="focusSearch" value="${esc(focusQuery)}" placeholder="Search DM.ARM, ADSL.SAFFL, ADAE.TRTEMFL, T14.3.1">
+              <button type="button" id="focusClear">Clear</button>
+            </div>
+            <div class="suggestions">${focusSearchResults().map(id => `<button type="button" data-focus-select="${esc(id)}" aria-pressed="${id === focusSelected}"><span class="mono">${esc(id)}</span><div class="small">${esc(focusNodeMeta(id).type)}</div></button>`).join("")}</div>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>Focused Impact DAG</h3>
+          <div class="panel-body focus-layout">
+            ${renderFocusGraph()}
+            <div>${renderFocusDetails()}</div>
+          </div>
+        </section>
+        <section class="panel">
+          <h3>Generated Artifacts</h3>
+          <div class="panel-body row"><span class="status-dot green"></span><span class="mono">output/dag.json, output/adam/*.R, output/output/*.R</span><span class="muted">updated on save</span></div>
+        </section>
+        <section class="panel">
+          <h3>Local Save Mode</h3>
+          <div class="panel-body">This page uses the local server so Save can update YAML inputs and regenerate files under <span class="mono">output/</span>. Opening the HTML file directly is read-only browser mode.</div>
+        </section>`;
+      bindNavigationTargets();
+      document.querySelectorAll("[data-focus-select], [data-focus-node]").forEach(button => {
+        button.addEventListener("click", () => {
+          focusSelected = button.dataset.focusSelect || button.dataset.focusNode;
+          focusQuery = focusSelected;
+          renderOverall();
+        });
+      });
+      document.getElementById("focusSearch").addEventListener("input", event => {
+        focusQuery = event.target.value;
+        renderOverall();
+        document.getElementById("focusSearch").focus();
+      });
+      document.getElementById("focusClear").addEventListener("click", () => {
+        focusQuery = "";
+        renderOverall();
+      });
+    }
+    async function saveVariable(approve) {
+      const editor = document.getElementById("variableCodeEditor");
+      await api("/api/save-variable-code", { dataset, variable, code: editor.value, approve });
+      renderAdam();
+    }
+    function renderAdam() {
+      setHeader("ADaM", "Spec diff, variable code edit, review, and dataset script assembly");
+      const ds = findDataset(dataset);
+      if (!ds) return;
+      const vars = ds.variables || [];
+      const selected = vars.find(v => v.name === variable) || vars[0];
+      variable = selected?.name || "";
+      document.getElementById("content").innerHTML = `
+        <div class="tabs">${datasets().map(item => `<button type="button" data-ds="${esc(item.id)}" aria-pressed="${item.id === ds.id}">${esc(item.id)}</button>`).join("")}</div>
+        <div class="grid cols-2">
+          <section class="panel">
+            <h3>${esc(ds.id)} Variables</h3>
+            <div class="panel-body">
+              ${vars.map(v => `<button type="button" class="row" data-var="${esc(v.name)}" aria-pressed="${v.name === variable}">
+                <span class="status-dot ${esc(v.status)}"></span><span class="mono">${esc(v.name)}</span><span class="muted">${esc(v.spec_similarity)}%</span>
+              </button>`).join("")}
+            </div>
+          </section>
+          <section class="panel">
+            <h3>${esc(ds.id)}.${esc(selected.name)} Review Workbench</h3>
+            <div class="panel-body grid">
+              <div class="grid cols-3">
+                <div class="metric"><b>${esc(selected.status).toUpperCase()}</b><span>${esc(selected.status_label)}</span></div>
+                <div class="metric"><b>${esc(selected.spec_similarity)}%</b><span>spec similarity</span></div>
+                <div class="metric"><b>${esc((selected.sources || []).length)}</b><span>source variables from spec</span></div>
+              </div>
+              <div class="panel">
+                <h3>Reference Spec vs Current Spec</h3>
+                <div class="panel-body diff">
+                  <div class="diff-box"><h4>Reference</h4><div>${esc(selected.reference_spec)}</div></div>
+                  <div class="diff-box"><h4>Current Study</h4><div>${esc(selected.current_spec)}</div></div>
+                </div>
+              </div>
+              <div class="panel"><h3>Sources From Spec</h3><div class="panel-body lineage-sources">${(selected.sources || []).map(source => `<span class="lineage-chip">${esc(source)}</span>`).join("")}</div></div>
+              <div class="panel">
+                <h3>${esc(ds.id)}.${esc(selected.name)} Variable R Code</h3>
+                <div class="panel-body"><textarea class="code-editor" id="variableCodeEditor" spellcheck="false">${esc(selected.code)}</textarea></div>
+              </div>
+              <div class="actions">
+                <button type="button" id="saveCodeBtn">Save Code Edit</button>
+                <button type="button" id="approveBtn">Approve Review</button>
+                <button type="button">Run Variable</button>
+              </div>
+            </div>
+          </section>
+        </div>
+        <section class="panel">
+          <h3>${esc(ds.id)} Dataset Script Assembly</h3>
+          <pre>${esc(datasetScript(ds))}</pre>
+        </section>`;
+      document.querySelectorAll("[data-ds]").forEach(btn => btn.addEventListener("click", () => {
+        dataset = btn.dataset.ds;
+        variable = findDataset(dataset)?.variables?.[0]?.name || "";
+        renderAdam();
+      }));
+      document.querySelectorAll("[data-var]").forEach(btn => btn.addEventListener("click", () => {
+        variable = btn.dataset.var;
+        renderAdam();
+      }));
+      document.getElementById("saveCodeBtn").addEventListener("click", () => saveVariable(false));
+      document.getElementById("approveBtn").addEventListener("click", () => saveVariable(true));
+    }
+    async function saveDpp() {
+      dppText = document.getElementById("yamlEditor").value;
+      await api("/api/save-dpp", { dppText });
+      renderOutput();
+    }
+    function renderOutput() {
+      setHeader("Output Lab", "DPP YAML drives output details and generated output code");
+      if (!outputs().some(o => o.id === outputId)) outputId = outputs()[0]?.id;
+      const out = outputs().find(o => o.id === outputId) || {};
+      const columns = out.columns || [];
+      const rows = out.rows || [];
+      const vars = out.required_variables || [];
+      document.getElementById("content").innerHTML = `
+        <div class="grid cols-2">
+          <section class="panel">
+            <h3>output-dpp.yaml</h3>
+            <textarea id="yamlEditor" spellcheck="false">${esc(dppText)}</textarea>
+            <div class="panel-body actions"><button type="button" id="saveDppBtn">Save DPP And Regenerate Output Code</button></div>
+          </section>
+          <div class="grid">
+            <div class="tabs">${outputs().map(o => `<button type="button" data-output="${esc(o.id)}" aria-pressed="${o.id === outputId}">${esc(o.id)}</button>`).join("")}</div>
+            <section class="panel">
+              <h3>${esc(out.id)} - ${esc(out.title)}</h3>
+              <div class="panel-body grid cols-3">
+                <div class="metric"><b>${esc(out.dataset)}</b><span>ADaM dataset</span></div>
+                <div class="metric"><b>${vars.length}</b><span>required variables</span></div>
+                <div class="metric"><b>${esc(out.type)}</b><span>output type</span></div>
+              </div>
+            </section>
+            <section class="panel">
+              <h3>Required ADaM Variables</h3>
+              <div class="panel-body">${vars.map(v => {
+                const s = variableStatus(v);
+                return `<div class="row"><span class="status-dot ${s[0]}"></span><span class="mono">${esc(v)}</span><span class="muted">${esc(s[1])}</span></div>`;
+              }).join("")}</div>
+            </section>
+            <section class="panel">
+              <h3>Output Preview</h3>
+              <div class="panel-body">
+                <table>
+                  <thead><tr><th>Row</th>${columns.map(c => `<th>${esc(c.label || c.id)}</th>`).join("")}</tr></thead>
+                  <tbody>${rows.map(r => `<tr><td>${esc(r.label)}</td>${columns.map(c => `<td>${esc(mockValue(r.statistic, c.decimals))}</td>`).join("")}</tr>`).join("")}</tbody>
+                </table>
+              </div>
+            </section>
+            <details>
+              <summary>Generated R Output Code</summary>
+              <pre>${esc(outputScript(out))}</pre>
+            </details>
+          </div>
+        </div>`;
+      document.getElementById("yamlEditor").addEventListener("input", e => {
+        dppText = e.target.value;
+      });
+      document.getElementById("saveDppBtn").addEventListener("click", saveDpp);
+      document.querySelectorAll("[data-output]").forEach(btn => btn.addEventListener("click", () => {
+        outputId = btn.dataset.output;
+        renderOutput();
+      }));
+    }
+    function render() {
+      if (!state) return;
+      if (view === "overall") renderOverall();
+      if (view === "adam") renderAdam();
+      if (view === "output") renderOutput();
+    }
+    async function init() {
+      if (window.location.protocol === "file:") {
+        window.location.href = "http://localhost:4173";
+        setHeader("Opening Local Server", "Redirecting to http://localhost:4173");
+        document.getElementById("content").innerHTML = `<section class="panel"><h3>Server-backed mode required</h3><div class="panel-body">Opening <span class="mono">http://localhost:4173</span> so save actions can write files and regenerate outputs.</div></section>`;
+        return;
+      }
+      try {
+        await api("/api/state");
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("output")) {
+          outputId = params.get("output");
+          view = "output";
+        }
+        if (params.has("variable")) {
+          const [ds, name] = params.get("variable").split(".");
+          dataset = ds;
+          variable = name;
+          view = "adam";
+        }
+        document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === view)));
+        render();
+      } catch (error) {
+        setHeader("Server Required", "Run node server.mjs and open http://localhost:4173");
+        document.getElementById("content").innerHTML = `<section class="panel"><h3>Local file mode</h3><div class="panel-body error">${esc(error.message)}</div></section>`;
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

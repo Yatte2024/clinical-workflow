@@ -1,0 +1,22 @@
+[
+  {"query": "Are there any safety signals in this study?", "should_trigger": true},
+  {"query": "Run a comprehensive safety review of this trial", "should_trigger": true},
+  {"query": "Perform disproportionality analysis using PRR and ROR", "should_trigger": true},
+  {"query": "Identify emerging safety signals from the AE data", "should_trigger": true},
+  {"query": "Review the overall drug safety profile", "should_trigger": true},
+  {"query": "Assess the benefit-risk balance for this compound", "should_trigger": true},
+  {"query": "What SMQ categories show elevated reporting?", "should_trigger": true},
+  {"query": "Compare AE rates between treatment and placebo arms", "should_trigger": true},
+  {"query": "Flag any unexpected safety findings across all domains", "should_trigger": true},
+  {"query": "Summarize the integrated safety data across labs, vitals, and AEs", "should_trigger": true},
+  {"query": "Complete the safety review checklist for this study", "should_trigger": false},
+  {"query": "Evaluate for Hy's Law using ALT and bilirubin", "should_trigger": false},
+  {"query": "Grade this lab value using CTCAE v5.0", "should_trigger": false},
+  {"query": "Create a shift table for lab parameters", "should_trigger": false},
+  {"query": "Plot a Kaplan-Meier curve for time to first AE", "should_trigger": false},
+  {"query": "What is the ORR by treatment arm?", "should_trigger": false},
+  {"query": "Run a t-test comparing baseline lab values", "should_trigger": false},
+  {"query": "Review vital signs for PCS criteria violations", "should_trigger": false},
+  {"query": "Search FAERS for similar safety signals", "should_trigger": false},
+  {"query": "Write an SAE narrative for subject 101-003", "should_trigger": false}
+]

@@ -1,0 +1,143 @@
+# CDISC Data Profiling Configuration
+# Used by the dataset-profiling skill and data_access tools.
+# Override per-study by placing a modified copy in the study skill layer.
+
+# Suffixes that trigger automatic unique-value capture (case-insensitive)
+key_suffixes:
+  - FL
+  - CD
+  - CAT
+
+# Parameter classification for lab/vital sign inventories
+parameter_categories:
+  liver:
+    - ALT
+    - AST
+    - BILI
+    - TBILI
+    - DBILI
+    - ALP
+    - GGT
+    - ALKP
+  renal:
+    - CREAT
+    - BUN
+    - URATE
+    - EGFR
+    - CRCL
+  hematology:
+    - HGB
+    - WBC
+    - PLT
+    - RBC
+    - HCT
+    - ANC
+    - LYMPH
+    - MONO
+    - LYM
+    - BASO
+    - EOS
+  chemistry:
+    - GLUC
+    - SODIUM
+    - POTASSIUM
+    - CHLORIDE
+    - CO2
+    - CALCIUM
+    - K
+    - CL
+    - CA
+    - PHOS
+    - ALB
+  cardiac:
+    - HR
+    - QT
+    - QTCF
+    - QTCB
+    - PR
+    - QRS
+  vital_signs:
+    - SYSBP
+    - DIABP
+    - PULSE
+    - TEMP
+    - WEIGHT
+    - HEIGHT
+    - BMI
+
+# SDTM domain classification
+domain_types:
+  special_purpose:
+    - DM
+  events:
+    - AE
+    - CE
+    - DS
+    - DV
+    - HO
+    - MH
+  interventions:
+    - CM
+    - EC
+    - EX
+    - PR
+    - SU
+  findings:
+    - EG
+    - IE
+    - LB
+    - MB
+    - MI
+    - MO
+    - MS
+    - PC
+    - PE
+    - PP
+    - QS
+    - RS
+    - SC
+    - SS
+    - TU
+    - VS
+  trial_design:
+    - SE
+    - SV
+
+# ADaM structure detection rules
+adam_detection:
+  bds:
+    required: [PARAMCD, AVAL]
+  occds:
+    seq_columns: [AESEQ, CMSEQ, MHSEQ]
+    exclude: [AVAL]
+  adsl:
+    required: [USUBJID]
+    exclude: [PARAMCD]
+
+# Grain (primary key) detection per structure type
+grain_rules:
+  bds:
+    required: [PARAMCD]
+    time_columns: [ADT, AVISIT, AVISITN]
+  events:
+    seq_pattern: "{DOMAIN}SEQ"
+    seq_fallback: [AESEQ, CMSEQ, MHSEQ, DSSEQ, EXSEQ, SEQN]
+  findings:
+    seq_pattern: "{DOMAIN}SEQ"
+    seq_fallback: [LBSEQ, VSSEQ, EGSEQ, QSSEQ, SEQN]
+  trial_design:
+    columns: [VISITNUM]
+
+# Columns to search for when building parameter inventory
+test_code_columns:
+  - PARAMCD
+  - LBTESTCD
+  - VSTESTCD
+  - EGTESTCD
+  - QSTESTCD
+
+# Relationship inference join keys
+join_keys:
+  - USUBJID
+  - STUDYID
+  - SITEID
