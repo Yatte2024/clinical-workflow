@@ -202,8 +202,8 @@ import Excel spec -> see variable status -> inspect ADAE.TRTEMFL -> generate/ada
 
 The prototype has two user-editable inputs:
 
-- `adam-specs.yaml`: ADaM variable specs, including source variables, reference spec, current spec, review status, similarity, and variable-level R code
-- `output-dpp.yaml`: output definitions, including required ADaM variables, population, filters, groups, columns, decimals, rows, and footnotes
+- `data/adam-specs.yaml`: ADaM variable specs, including source variables, reference spec, current spec, review status, similarity, and variable-level R code
+- `data/output-dpp.yaml`: output definitions, including required ADaM variables, population, filters, groups, columns, decimals, rows, and footnotes
 
 The generated output folder contains:
 
@@ -213,8 +213,8 @@ The generated output folder contains:
 - `output/output/T14_1_1.R`
 - `output/output/T14_3_1.R`
 
-When the user saves an ADaM variable code edit in the UI, the prototype updates `adam-specs.yaml` and regenerates the ADaM dataset script plus `output/dag.json`.
+When the user saves an ADaM variable code edit in the UI, the prototype updates `data/adam-specs.yaml` and regenerates the ADaM dataset script plus `output/dag.json`.
 
-When the user saves the DPP YAML in the UI, the prototype updates `output-dpp.yaml` and regenerates the output R code plus `output/dag.json`.
+When the user saves the DPP YAML in the UI, the prototype updates `data/output-dpp.yaml` and regenerates the output R code plus `output/dag.json`.
 
 The prototype can be opened as a static local HTML file for read-only viewing, but save/regenerate behavior requires the local server. Browser pages opened through `file://` cannot directly write arbitrary files on disk, so the server owns file writes and artifact generation.

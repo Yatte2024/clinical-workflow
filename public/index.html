@@ -194,6 +194,50 @@
       border-radius: 6px;
       padding: 9px 10px;
     }
+    .adrg-workspace {
+      display: grid;
+      grid-template-columns: 300px minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    input[type="file"] {
+      width: 100%;
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      padding: 9px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font: inherit;
+      margin-top: 8px;
+    }
+    .section-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: start;
+    }
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .source-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+    }
     .lineage-board {
       position: relative;
       overflow: auto;
@@ -454,8 +498,8 @@
     @media (max-width: 980px) {
       .app { grid-template-columns: 1fr; }
       aside { border-right: 0; border-bottom: 1px solid var(--line); }
-      nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .cols-2, .cols-3, .dag, .diff, .edge-row, .dag-header, .output-row, .var-lane, .focus-query, .focus-layout { grid-template-columns: 1fr; }
+      nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .cols-2, .cols-3, .dag, .diff, .edge-row, .dag-header, .output-row, .var-lane, .focus-query, .focus-layout, .adrg-workspace { grid-template-columns: 1fr; }
       .arrow { display: none; }
       .dag-board { min-width: 0; }
     }
@@ -472,6 +516,7 @@
         <button type="button" data-view="overall" aria-pressed="true">Overall</button>
         <button type="button" data-view="adam" aria-pressed="false">ADaM</button>
         <button type="button" data-view="output" aria-pressed="false">Output Lab</button>
+        <button type="button" data-view="adrg" aria-pressed="false">ADRG</button>
       </nav>
     </aside>
     <main>
@@ -496,6 +541,9 @@
     let selectedGroup = "ADAE";
     let focusSelected = "ADSL.SAFFL";
     let focusQuery = "";
+    let adrgSelected = "7.1";
+    const adrgUploaded = {};
+    const adrgReviewed = new Set(["4.2"]);
 
     function esc(v) {
       return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -705,6 +753,127 @@
           <div class="detail-item"><b class="mono">${esc(focusSelected)}</b><div class="small">${esc(focusNodeMeta(focusSelected).type)} · ${esc(focusNodeMeta(focusSelected).label)}</div></div>
           <div class="detail-item"><b>Downstream outputs</b><div class="small">${affectedOutputs.map(id => `<button type="button" data-output-target="${esc(id)}"><span class="mono">${esc(id)}</span></button>`).join(" ") || "None"}</div></div>
         </div>`;
+    }
+    const adrgInputs = [
+      { id: "template", label: "P21E ADRG template", required: true, source: "upload", feeds: ["all sections"] },
+      { id: "sap", label: "SAP", required: true, source: "upload", feeds: ["2.1", "2.2", "3.5"] },
+      { id: "adamSpec", label: "ADaM spec", required: true, source: "upload", feeds: ["3.1", "5.2", "8"] },
+      { id: "dpp", label: "DPP YAML / Excel", required: true, source: "existing", feeds: ["7.2", "output titles"] },
+      { id: "code", label: "Generated ADaM/output code", required: false, source: "existing", feeds: ["4.2", "7.1", "7.2"] },
+      { id: "logs", label: "Program logs", required: false, source: "upload", feeds: ["7.1", "7.2", "7.3"] }
+    ];
+    const adrgSections = [
+      { id: "2.1", title: "Protocol Amendments", needs: ["sap"], sources: ["SAP"], text: "Protocol amendment table will be copied from the SAP amendment history table." },
+      { id: "2.2", title: "Study Design", needs: ["sap"], sources: ["SAP"], text: "Study design narrative will be extracted from the SAP study design section." },
+      { id: "3.1", title: "Core Variables", needs: ["adamSpec"], sources: ["ADaM spec"], text: "Core variables will be calculated from the ADaM spec Variable Metadata sheet." },
+      { id: "3.5", title: "Partial Date Imputation", needs: ["sap"], sources: ["SAP"], text: "Partial date imputation rules will be copied from the SAP imputation section." },
+      { id: "4.2", title: "Dataset Dependency Diagram", needs: ["code"], sources: ["output/dag.json", "generated code"], text: "DM + EX -> ADSL -> T14.1.1\nAE + ADSL -> ADAE -> T14.3.1\n\nUse the same lineage engine as Overall, not hard-coded ADRG graph rules." },
+      { id: "5.2", title: "PARAMCD / PARCATn Tables", needs: ["adamSpec"], sources: ["ADaM spec"], text: "Parameter and category tables will be generated from PARAMCD/PARCATn rows in the ADaM spec." },
+      { id: "7.1", title: "ADaM Program List", needs: ["code"], sources: ["output/adam/adsl.R", "output/adam/adae.R"], text: "Program        Output Dataset    Input Dataset(s)    Order\nadsl.R         ADSL              DM, EX              1\nadae.R         ADAE              AE, ADSL            2\n\nFor R-first MVP, this can come from generated R code. SAS macro/submacro columns stay optional until logs/macros are uploaded." },
+      { id: "7.2", title: "Output Program List", needs: ["dpp", "code"], sources: ["data/output-dpp.yaml", "output/output/*.R"], text: "Table No.    Title                                             Source Dataset\nT14.1.1      Demographic and Baseline Characteristics           ADSL\nT14.3.1      Treatment-Emergent Adverse Events by SOC and PT    ADAE\n\nDPP stays the source of truth for table number and title." },
+      { id: "7.3", title: "Unique Macro List", needs: ["logs"], sources: ["macro library", "logs"], text: "Macro list is optional for the R-first MVP. It becomes required only when SAS/eSub parity is in scope." },
+      { id: "8", title: "Appendices and DLKA", needs: ["adamSpec"], sources: ["ADaM spec"], text: "Appendix and Date Last Known Alive tables will come from the ADaM spec reviewer guide sheets." }
+    ];
+    function hasAdrgInput(id) {
+      const input = adrgInputs.find(item => item.id === id);
+      return input?.source === "existing" || Boolean(adrgUploaded[id]?.length);
+    }
+    function adrgSectionStatus(section) {
+      if (adrgReviewed.has(section.id)) return ["green", "Reviewed"];
+      if (section.needs.every(hasAdrgInput)) return ["yellow", "Need review"];
+      return ["red", "Need upload"];
+    }
+    function adrgInputStatus(input) {
+      if (input.source === "existing") return ["green", "Detected"];
+      if (adrgUploaded[input.id]?.length) return ["green", `${adrgUploaded[input.id].length} file(s)`];
+      return input.required ? ["red", "Missing"] : ["yellow", "Optional"];
+    }
+    function selectedAdrgSection() {
+      return adrgSections.find(section => section.id === adrgSelected) || adrgSections[0];
+    }
+    function renderAdrgInputs() {
+      return `<section class="panel">
+        <h3>Inputs</h3>
+        <div class="panel-body">
+          ${adrgInputs.map(input => {
+            const [color, status] = adrgInputStatus(input);
+            return `<div class="row">
+              <span class="status-dot ${color}"></span>
+              <div>
+                <b>${esc(input.label)}</b>
+                <div class="small">${input.feeds.map(esc).join(", ")}</div>
+                ${input.source === "upload" ? `<input type="file" data-adrg-upload="${esc(input.id)}" ${input.id === "logs" ? "multiple" : ""}>` : ""}
+              </div>
+              <span class="small">${esc(status)}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </section>`;
+    }
+    function renderAdrgSections() {
+      const ready = adrgSections.filter(section => adrgSectionStatus(section)[0] !== "red").length;
+      const reviewed = adrgSections.filter(section => adrgReviewed.has(section.id)).length;
+      return `<section class="panel">
+        <h3>ADRG Sections</h3>
+        <div class="panel-body">
+          <div class="grid cols-3">
+            <div class="metric"><b>${ready}</b><span>ready</span></div>
+            <div class="metric"><b>${adrgSections.length - ready}</b><span>need upload</span></div>
+            <div class="metric"><b>${reviewed}</b><span>reviewed</span></div>
+          </div>
+          ${adrgSections.map(section => {
+            const [color, label] = adrgSectionStatus(section);
+            return `<button type="button" class="section-row" data-adrg-section="${esc(section.id)}" aria-pressed="${section.id === adrgSelected}">
+              <span class="status-dot ${color}"></span>
+              <span><b class="mono">${esc(section.id)}</b> ${esc(section.title)}<br><span class="small">${section.sources.map(esc).join(", ")}</span></span>
+              <span class="small">${esc(label)}</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </section>`;
+    }
+    function renderAdrgPreview() {
+      const section = selectedAdrgSection();
+      const [color, status] = adrgSectionStatus(section);
+      const text = color === "red" ? "Upload the required source first. The draft preview will appear here." : section.text;
+      return `<section class="panel">
+        <div class="preview-head">
+          <div>
+            <h3>Preview: ADRG ${esc(section.id)}</h3>
+            <div class="small">${esc(section.title)}</div>
+          </div>
+          <div class="actions"><button type="button" id="adrgReviewBtn">Mark Reviewed</button></div>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <span class="status-dot ${color}"></span>
+            <span>${esc(status)}</span>
+            <span class="small">${section.needs.map(id => hasAdrgInput(id) ? "ok" : "missing").join(" / ")}</span>
+          </div>
+          <div class="source-list">${section.sources.map(source => `<span class="chip">${esc(source)}</span>`).join("")}</div>
+          <pre>${esc(text)}</pre>
+        </div>
+      </section>`;
+    }
+    function renderAdrg() {
+      setHeader("ADRG", "Inputs, generated ADRG sections, and reviewer approval");
+      document.getElementById("content").innerHTML = `<div class="adrg-workspace">${renderAdrgInputs()}${renderAdrgSections()}${renderAdrgPreview()}</div>`;
+      document.querySelectorAll("[data-adrg-upload]").forEach(input => {
+        input.addEventListener("change", event => {
+          adrgUploaded[event.target.dataset.adrgUpload] = [...event.target.files].map(file => file.name);
+          renderAdrg();
+        });
+      });
+      document.querySelectorAll("[data-adrg-section]").forEach(button => {
+        button.addEventListener("click", () => {
+          adrgSelected = button.dataset.adrgSection;
+          renderAdrg();
+        });
+      });
+      document.getElementById("adrgReviewBtn").addEventListener("click", () => {
+        if (adrgSectionStatus(selectedAdrgSection())[0] !== "red") adrgReviewed.add(adrgSelected);
+        renderAdrg();
+      });
     }
     function inputGroups(output) {
       const groups = new Map();
@@ -960,7 +1129,7 @@
       document.getElementById("content").innerHTML = `
         <div class="grid cols-2">
           <section class="panel">
-            <h3>output-dpp.yaml</h3>
+            <h3>data/output-dpp.yaml</h3>
             <textarea id="yamlEditor" spellcheck="false">${esc(dppText)}</textarea>
             <div class="panel-body actions"><button type="button" id="saveDppBtn">Save DPP And Regenerate Output Code</button></div>
           </section>
@@ -1010,6 +1179,7 @@
       if (view === "overall") renderOverall();
       if (view === "adam") renderAdam();
       if (view === "output") renderOutput();
+      if (view === "adrg") renderAdrg();
     }
     async function init() {
       if (window.location.protocol === "file:") {

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADRG Tab Test</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f6f7f9, #101215);
+      --surface: light-dark(#ffffff, #171a20);
+      --surface-2: light-dark(#eef1f5, #20242c);
+      --text: light-dark(#1f2633, #eef2f7);
+      --muted: light-dark(#667085, #a5adba);
+      --line: light-dark(#d8dee8, #343a45);
+      --green: #1f9d55;
+      --yellow: #d89614;
+      --red: #d64545;
+      --blue: #2d6cdf;
+      --code: light-dark(#172033, #dce7ff);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0;
+    }
+    header {
+      min-height: 62px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 18px; }
+    h2 { font-size: 15px; }
+    button {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    button[aria-pressed="true"] {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: light-dark(#edf4ff, #172033);
+    }
+    input[type="file"] {
+      width: 100%;
+      border: 1px dashed var(--line);
+      border-radius: 6px;
+      padding: 9px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font: inherit;
+    }
+    .app { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+    .content {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 300px minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .panel h2 {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-body { padding: 14px; display: grid; gap: 10px; }
+    .small { color: var(--muted); font-size: 12px; }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      overflow-wrap: anywhere;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface-2);
+      padding: 9px 10px;
+      min-width: 0;
+    }
+    .section-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 9px;
+      align-items: start;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .green { background: var(--green); }
+    .yellow { background: var(--yellow); }
+    .red { background: var(--red); }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      border-radius: 6px;
+      padding: 10px;
+    }
+    .metric b { display: block; font-size: 20px; }
+    .metric span { color: var(--muted); font-size: 12px; }
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .source-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 8px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      overflow: auto;
+      min-height: 360px;
+      background: light-dark(#fbfcfe, #111419);
+      color: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font: 13px/1.48 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 1180px) {
+      .content { grid-template-columns: 1fr; }
+      pre { min-height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <h1>ADRG Test Workspace</h1>
+        <div class="small">Inputs checklist, section status, and selected ADRG preview</div>
+      </div>
+      <div class="small">prototype only</div>
+    </header>
+    <main class="content" id="app"></main>
+  </div>
+
+  <script>
+    const state = { selected: "7.1", uploaded: {}, reviewed: new Set(["4.2"]) };
+    const inputs = [
+      { id: "template", label: "P21E ADRG template", required: true, source: "upload", feeds: ["all sections"] },
+      { id: "sap", label: "SAP", required: true, source: "upload", feeds: ["2.1", "2.2", "3.5"] },
+      { id: "adamSpec", label: "ADaM spec", required: true, source: "upload", feeds: ["3.1", "5.2", "8"] },
+      { id: "dpp", label: "DPP YAML / Excel", required: true, source: "existing", feeds: ["7.2", "output titles"] },
+      { id: "code", label: "Generated ADaM/output code", required: false, source: "existing", feeds: ["4.2", "7.1", "7.2"] },
+      { id: "logs", label: "Program logs", required: false, source: "upload", feeds: ["7.1", "7.2", "7.3"] }
+    ];
+    const sections = [
+      { id: "2.1", title: "Protocol Amendments", needs: ["sap"], sources: ["SAP"], text: "Protocol amendment table will be copied from the SAP amendment history table." },
+      { id: "2.2", title: "Study Design", needs: ["sap"], sources: ["SAP"], text: "Study design narrative will be extracted from the SAP study design section." },
+      { id: "3.1", title: "Core Variables", needs: ["adamSpec"], sources: ["ADaM spec"], text: "Core variables will be calculated from the ADaM spec Variable Metadata sheet." },
+      { id: "3.5", title: "Partial Date Imputation", needs: ["sap"], sources: ["SAP"], text: "Partial date imputation rules will be copied from the SAP imputation section." },
+      { id: "4.2", title: "Dataset Dependency Diagram", needs: ["code"], sources: ["output/dag.json", "generated code"], text: "DM + EX -> ADSL -> T14.1.1\nAE + ADSL -> ADAE -> T14.3.1\n\nUse the same lineage engine as Overall, not hard-coded ADRG graph rules." },
+      { id: "5.2", title: "PARAMCD / PARCATn Tables", needs: ["adamSpec"], sources: ["ADaM spec"], text: "Parameter and category tables will be generated from PARAMCD/PARCATn rows in the ADaM spec." },
+      { id: "7.1", title: "ADaM Program List", needs: ["code"], sources: ["output/adam/adsl.R", "output/adam/adae.R"], text: "Program        Output Dataset    Input Dataset(s)    Order\nadsl.R         ADSL              DM, EX              1\nadae.R         ADAE              AE, ADSL            2\n\nFor R-first MVP, this can come from generated R code. SAS macro/submacro columns stay optional until logs/macros are uploaded." },
+      { id: "7.2", title: "Output Program List", needs: ["dpp", "code"], sources: ["data/output-dpp.yaml", "output/output/*.R"], text: "Table No.    Title                                             Source Dataset\nT14.1.1      Demographic and Baseline Characteristics           ADSL\nT14.3.1      Treatment-Emergent Adverse Events by SOC and PT    ADAE\n\nDPP stays the source of truth for table number and title." },
+      { id: "7.3", title: "Unique Macro List", needs: ["logs"], sources: ["macro library", "logs"], text: "Macro list is optional for the R-first MVP. It becomes required only when SAS/eSub parity is in scope." },
+      { id: "8", title: "Appendices and DLKA", needs: ["adamSpec"], sources: ["ADaM spec"], text: "Appendix and Date Last Known Alive tables will come from the ADaM spec reviewer guide sheets." }
+    ];
+    function esc(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    function hasInput(id) {
+      const input = inputs.find(item => item.id === id);
+      return input?.source === "existing" || Boolean(state.uploaded[id]?.length);
+    }
+    function sectionStatus(section) {
+      if (state.reviewed.has(section.id)) return ["green", "Reviewed"];
+      if (section.needs.every(hasInput)) return ["yellow", "Need review"];
+      return ["red", "Need upload"];
+    }
+    function inputStatus(input) {
+      if (input.source === "existing") return ["green", "Detected"];
+      if (state.uploaded[input.id]?.length) return ["green", `${state.uploaded[input.id].length} file(s)`];
+      return input.required ? ["red", "Missing"] : ["yellow", "Optional"];
+    }
+    function selectedSection() {
+      return sections.find(section => section.id === state.selected) || sections[0];
+    }
+    function renderInputs() {
+      return `<section class="panel">
+        <h2>Inputs</h2>
+        <div class="panel-body">
+          ${inputs.map(input => {
+            const [color, status] = inputStatus(input);
+            return `<div class="row">
+              <span class="dot ${color}"></span>
+              <div>
+                <b>${esc(input.label)}</b>
+                <div class="small">${input.feeds.map(esc).join(", ")}</div>
+                ${input.source === "upload" ? `<input type="file" data-upload="${esc(input.id)}" ${input.id === "logs" ? "multiple" : ""}>` : ""}
+              </div>
+              <span class="small">${esc(status)}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </section>`;
+    }
+    function renderSections() {
+      const ready = sections.filter(section => sectionStatus(section)[0] !== "red").length;
+      const reviewed = sections.filter(section => state.reviewed.has(section.id)).length;
+      return `<section class="panel">
+        <h2>ADRG Sections</h2>
+        <div class="panel-body">
+          <div class="metrics">
+            <div class="metric"><b>${ready}</b><span>ready</span></div>
+            <div class="metric"><b>${sections.length - ready}</b><span>need upload</span></div>
+            <div class="metric"><b>${reviewed}</b><span>reviewed</span></div>
+          </div>
+          ${sections.map(section => {
+            const [color, label] = sectionStatus(section);
+            return `<button type="button" class="section-row" data-section="${esc(section.id)}" aria-pressed="${section.id === state.selected}">
+              <span class="dot ${color}"></span>
+              <span><b class="mono">${esc(section.id)}</b> ${esc(section.title)}<br><span class="small">${section.sources.map(esc).join(", ")}</span></span>
+              <span class="small">${esc(label)}</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </section>`;
+    }
+    function renderPreview() {
+      const section = selectedSection();
+      const [color, status] = sectionStatus(section);
+      return `<section class="panel">
+        <div class="preview-head">
+          <div>
+            <h2>Preview: ADRG ${esc(section.id)}</h2>
+            <div class="small">${esc(section.title)}</div>
+          </div>
+          <div class="actions"><button type="button" id="reviewBtn">Mark Reviewed</button></div>
+        </div>
+        <div class="panel-body">
+          <div class="row">
+            <span class="dot ${color}"></span>
+            <span>${esc(status)}</span>
+            <span class="small">${section.needs.map(id => hasInput(id) ? "ok" : "missing").join(" / ")}</span>
+          </div>
+          <div class="source-list">${section.sources.map(source => `<span class="chip">${esc(source)}</span>`).join("")}</div>
+          <pre>${esc(color === "red" ? "Upload the required source first. The draft preview will appear here." : section.text)}</pre>
+        </div>
+      </section>`;
+    }
+    function render() {
+      document.getElementById("app").innerHTML = `${renderInputs()}${renderSections()}${renderPreview()}`;
+      document.querySelectorAll("[data-upload]").forEach(input => {
+        input.addEventListener("change", event => {
+          state.uploaded[event.target.dataset.upload] = [...event.target.files].map(file => file.name);
+          render();
+        });
+      });
+      document.querySelectorAll("[data-section]").forEach(button => {
+        button.addEventListener("click", () => {
+          state.selected = button.dataset.section;
+          render();
+        });
+      });
+      document.getElementById("reviewBtn").addEventListener("click", () => {
+        if (sectionStatus(selectedSection())[0] !== "red") state.reviewed.add(state.selected);
+        render();
+      });
+    }
+    render();
+  </script>
+</body>
+</html>
