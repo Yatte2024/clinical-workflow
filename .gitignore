@@ -1,2 +1,9 @@
 .DS_Store
 output/.DS_Store
+
+# Local Codex skills and reference packs
+skills/
+skills-lock.json
+
+# Local R learning examples
+clinical-r-learning/*.R
