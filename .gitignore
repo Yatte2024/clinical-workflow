@@ -6,4 +6,4 @@ skills/
 skills-lock.json
 
 # Local R learning examples
-clinical-r-learning/*.R
+clinical-r-learning/
